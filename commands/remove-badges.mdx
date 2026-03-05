@@ -1,0 +1,374 @@
+---
+title: Badge Removal Commands
+description: Remove badges from your Roblox inventory using various methods
+---
+
+DBR provides multiple ways to remove badges from your Roblox inventory. All commands require authentication and can be combined in a single execution.
+
+## Remove by Badge ID
+
+Remove a specific badge by its ID.
+
+<ParamField path="--badge" type="integer" required>
+  The badge ID to remove from your account
+  
+  **Aliases:** `-b`, `BADGE_ID`
+</ParamField>
+
+### Example
+
+```bash
+dbr --env-file .env --badge 2124858409
+```
+
+<Accordion title="Expected Output">
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Deleting badge 2124858409 from account...
+Deleting https://badges.roblox.com/v1/user/badges/2124858409...
+Response Status Code: 200
+Badge 2124858409 was successfully removed.
+```
+</Accordion>
+
+<Info>
+  If the badge doesn't exist or isn't in your inventory, DBR will return a 404 error and skip it.
+</Info>
+
+---
+
+## Remove by Place ID
+
+Remove all badges from a specific Roblox game/place.
+
+<ParamField path="--place" type="integer" required>
+  The place ID containing badges to remove
+  
+  **Aliases:** `-p`, `PLACE_ID`
+</ParamField>
+
+### How It Works
+
+1. Fetches the universe ID from the place ID
+2. Retrieves all badges in that universe
+3. Checks which badges you own
+4. Removes owned badges in batches
+
+### Example
+
+```bash
+dbr --env-file .env --place 1818
+```
+
+<Accordion title="Expected Output">
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Getting universe from 1818...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----||
+Deleting badge 1234 from account...
+Deleting https://badges.roblox.com/v1/user/badges/1234...
+Response Status Code: 200
+Badge 1234 was successfully removed.
+|----||1||----||
+All badges on the page have been removed.
+Searched all badges.
+```
+</Accordion>
+
+### Using BoR Database
+
+For disabled badges (hidden in Roblox API), use the Badgers of Robloxia database:
+
+```bash
+dbr --env-file .env --place 1818 --use-bor-badge-database
+```
+
+<Warning>
+  BoR API requests are significantly slower. Only use this if you need to find disabled badges.
+</Warning>
+
+---
+
+## Remove by User ID
+
+Remove all badges from every game created by a specific user.
+
+<ParamField path="--user" type="integer" required>
+  The user ID whose game badges you want to remove
+  
+  **Aliases:** `-u`, `USER_ID`
+</ParamField>
+
+### How It Works
+
+1. Fetches all public games created by the user
+2. Processes each game using the place removal logic
+3. Caches checked places to avoid duplicates
+4. Continues through all pages of games
+
+### Example
+
+```bash
+dbr --env-file .env --user 156
+```
+
+<Accordion title="Expected Output">
+```
+Finding user 156...
+Searching player's games...
+Checking place 1...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 1818...
+Searching universe's badges...
+Checking badges on page 1...
+(... badge removal output ...)
+--------------
+^^^^^^^^^^^^^^
+Searched all games.
+```
+</Accordion>
+
+<Info>
+  DBR caches checked places in `dbr_cache/checked_places.json` to avoid reprocessing.
+</Info>
+
+---
+
+## Remove by Group ID
+
+Remove all badges from every public game owned by a group.
+
+<ParamField path="--group" type="integer" required>
+  The group/community ID whose game badges you want to remove
+  
+  **Aliases:** `-g`, `--community`, `GROUP_ID`
+</ParamField>
+
+### How It Works
+
+1. Fetches all public games in the group
+2. Processes each game using the place removal logic
+3. Skips private games (not accessible via API)
+4. Caches checked places
+
+### Example
+
+```bash
+dbr --env-file .env --group 1200769
+```
+
+<Accordion title="Expected Output">
+```
+Finding group 1200769...
+Searching group's games...
+Checking place 1...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 534706382...
+Searching universe's badges...
+(... badge removal output ...)
+--------------
+^^^^^^^^^^^^^^
+Searched all games.
+```
+</Accordion>
+
+<Note>
+  Only public games are visible. Private group games cannot be scanned via the API.
+</Note>
+
+---
+
+## Remove by File
+
+Remove badges, places, or users from a text file containing Roblox URLs.
+
+<ParamField path="--file" type="string" required>
+  Path to text file with Roblox URLs (one per line)
+</ParamField>
+
+### Supported URL Formats
+
+The file should contain one URL per line:
+
+```text
+https://www.roblox.com/badges/2124858409
+https://www.roblox.com/games/1818
+https://www.roblox.com/users/156
+https://www.roblox.com/games/534706382
+```
+
+<Info>
+  URLs can be in `http://` or `https://` format, with or without `www.`
+</Info>
+
+### Example
+
+```bash
+dbr --env-file .env --file spam_badges.txt
+```
+
+<Accordion title="spam_badges.txt Content">
+```text
+https://www.roblox.com/badges/2124858409
+https://www.roblox.com/badges/2124858410
+https://www.roblox.com/games/1818
+```
+</Accordion>
+
+### Compressed Files
+
+DBR supports Zstandard-compressed files (`.txt.zst`):
+
+```bash
+dbr --env-file .env --file badge_spam_list.txt.zst
+```
+
+This is useful for large badge spam lists downloaded from [badge-spam-lists](https://github.com/exurd/badge-spam-lists).
+
+---
+
+## Remove by MetaGamerScore ID
+
+Remove badges from a game using its MetaGamerScore game ID.
+
+<ParamField path="--mgs-id" type="integer" required>
+  The MetaGamerScore game ID
+</ParamField>
+
+### How It Works
+
+1. Fetches the Roblox place ID from MetaGamerScore
+2. Processes badges using the place removal logic
+
+### Example
+
+```bash
+dbr --env-file .env --mgs-id 12345
+```
+
+<Note>
+  This requires an active internet connection to query MetaGamerScore's website.
+</Note>
+
+---
+
+## Combining Commands
+
+You can combine multiple removal methods in a single command:
+
+```bash
+dbr --env-file .env \
+  --badge 2124858409 \
+  --place 1818 \
+  --user 156 \
+  --file spam_list.txt
+```
+
+Execution order:
+1. Badge removal (`--badge`)
+2. MetaGamerScore lookup (`--mgs-id`)
+3. Place removal (`--place`)
+4. Group removal (`--group`)
+5. User removal (`--user`)
+6. File processing (`--file`)
+
+---
+
+## Performance Tuning
+
+### Concurrent Threads
+
+Increase deletion speed with multiple threads:
+
+```bash
+dbr --env-file .env --place 1818 --delete-threads 5
+```
+
+<ParamField path="--delete-threads" type="integer" default="2">
+  Number of concurrent deletion threads (default: 2)
+</ParamField>
+
+<Warning>
+  Higher thread counts may trigger Roblox rate limits. Start with 2-4 threads and increase cautiously.
+</Warning>
+
+### Cache Directory
+
+Customize where DBR stores cache data:
+
+```bash
+dbr --env-file .env --place 1818 --cache-directory ~/dbr_data
+```
+
+<ParamField path="--cache-directory" type="string" default="./dbr_cache">
+  Directory for cache storage (stores checked places)
+</ParamField>
+
+---
+
+## Error Handling
+
+### Common Errors
+
+<AccordionGroup>
+  <Accordion title="400 Bad Request">
+    The badge ID or place ID is invalid. Verify the ID is correct.
+  </Accordion>
+  
+  <Accordion title="401 Unauthorized">
+    Your `.ROBLOSECURITY` token is invalid or expired. Get a fresh token from your browser.
+  </Accordion>
+  
+  <Accordion title="403 Forbidden">
+    CSRF token validation failed. DBR automatically re-validates and retries.
+  </Accordion>
+  
+  <Accordion title="404 Not Found">
+    Badge doesn't exist or isn't in your inventory. DBR skips it automatically.
+  </Accordion>
+  
+  <Accordion title="429 Too Many Requests">
+    Rate limit exceeded. DBR automatically waits and retries with exponential backoff.
+  </Accordion>
+</AccordionGroup>
+
+### Retry Logic
+
+DBR automatically retries failed deletions:
+- Up to 8 retry attempts per badge
+- Exponential backoff between retries (2^n seconds)
+- Automatic CSRF token re-validation on 403 errors
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Environment Files" icon="file-lines">
+    Store tokens in `.env` files instead of command-line arguments for security
+  </Card>
+  
+  <Card title="Start Small" icon="gauge-simple-low">
+    Test with a single badge before processing large lists
+  </Card>
+  
+  <Card title="Monitor Progress" icon="eye">
+    Watch console output for errors or issues
+  </Card>
+  
+  <Card title="Backup Data" icon="floppy-disk">
+    Save your badge list files before deletion (deletion is permanent)
+  </Card>
+</CardGroup>
+
+<Warning>
+  **Badge removal is permanent!** Roblox does not provide a way to restore deleted badges. Make sure you want to remove badges before running commands.
+</Warning>

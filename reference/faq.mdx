@@ -1,0 +1,620 @@
+---
+title: FAQ
+description: Frequently asked questions about DBR
+---
+
+Common questions and answers about using Dumb Badge(s) Remover.
+
+## General Questions
+
+<AccordionGroup>
+  <Accordion title="What is DBR?">
+    Dumb Badge(s) Remover (DBR) is a Python CLI tool that helps you remove unwanted badges from your Roblox inventory. It's particularly useful for:
+    
+    - Removing spam badges from badge chains
+    - Cleaning up badges from invalid MetaGamerScore games
+    - Decluttering your badge collection
+    - Scanning inventories for spam badges
+    
+    DBR can process individual badges, entire places, user/group games, or bulk lists of URLs.
+  </Accordion>
+  
+  <Accordion title="Is DBR safe to use?">
+    Yes, DBR is safe when used correctly:
+    
+    ✅ **Open source** - All code is publicly available for review  
+    ✅ **No data collection** - DBR doesn't send your token anywhere except Roblox  
+    ✅ **Local execution** - Runs entirely on your machine  
+    ✅ **MIT licensed** - Free and open source
+    
+    **Important security reminders:**
+    - Only use your own `.ROBLOSECURITY` token
+    - Never share your token with anyone
+    - Use `.env` files to protect your token from accidental exposure
+    - Review any badge lists before processing them
+  </Accordion>
+  
+  <Accordion title="What Python version do I need?">
+    DBR requires **Python 3.11 or higher**.
+    
+    Check your Python version:
+    ```bash
+    python --version
+    ```
+    
+    Download Python from [python.org](https://www.python.org/downloads/) if you need to upgrade.
+  </Accordion>
+  
+  <Accordion title="Can I undo badge deletions?">
+    **No, badge deletions are permanent and cannot be undone.**
+    
+    Once a badge is removed from your inventory, you would need to re-earn it by meeting the badge requirements again in the game.
+    
+    **Best practices:**
+    - Use `--check-inventory` first to scan without deleting
+    - Review the output files before running deletion commands
+    - Start with a single badge to test: `dbr --badge [ID]`
+    - Keep backups of badge lists you care about
+  </Accordion>
+</AccordionGroup>
+
+## Authentication & Security
+
+<AccordionGroup>
+  <Accordion title="How do I get my ROBLOSECURITY token?">
+    Follow these steps to safely export your token:
+    
+    <Steps>
+      <Step title="Log into Roblox">
+        Open your browser and log into [roblox.com](https://www.roblox.com)
+      </Step>
+      
+      <Step title="Open Developer Tools">
+        - **Chrome/Edge:** Press `F12` or `Ctrl+Shift+I`
+        - **Firefox:** Press `F12` or `Ctrl+Shift+I`
+        - **Safari:** Enable Developer menu in Preferences, then press `Cmd+Option+I`
+      </Step>
+      
+      <Step title="Find the cookie">
+        1. Go to the **Application** or **Storage** tab
+        2. Expand **Cookies** in the sidebar
+        3. Click on `https://www.roblox.com`
+        4. Find `.ROBLOSECURITY` in the list
+        5. Copy the entire value
+      </Step>
+      
+      <Step title="Store securely">
+        Save the token in a `.env` file, never in your shell history or shared code.
+      </Step>
+    </Steps>
+    
+    **Full tutorial:** [ro.py ROBLOSECURITY guide](https://ro.py.jmk.gg/dev/tutorials/roblosecurity/)
+    
+    <Warning>
+      **Your token is like your password - never share it!**
+      
+      Anyone with your token can control your entire Roblox account, including:
+      - Spending Robux
+      - Changing account settings
+      - Accessing private information
+      - Deleting items
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="Should I use --rbx-token or --env-file?">
+    **Use `--env-file` for better security.**
+    
+    **Comparison:**
+    
+    | Method | Security | Convenience |
+    |--------|----------|-------------|
+    | `--env-file` | ✅ High - Token not in shell history | ✅ Easier for repeated use |
+    | `--rbx-token` | ⚠️ Lower - Token visible in history | ⚠️ Must type token each time |
+    
+    **Setting up an env file:**
+    
+    1. Create a file named `.env`:
+    ```bash
+    RBX_TOKEN="_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you..."
+    USER_AGENT="DBR/1.0"
+    ```
+    
+    2. Use it with DBR:
+    ```bash
+    dbr --env-file .env --place 123456
+    ```
+    
+    3. Keep `.env` out of version control:
+    ```bash
+    echo ".env" >> .gitignore
+    ```
+  </Accordion>
+  
+  <Accordion title="Why does my token keep expiring?">
+    Roblox tokens expire when:
+    
+    - You log out of Roblox on any device
+    - You change your password
+    - You reset your account security
+    - The session naturally expires (usually after 30 days)
+    
+    **Solutions:**
+    - Export a fresh token when needed
+    - Stay logged into Roblox while using DBR
+    - Don't log out unnecessarily
+    
+    **Check if your token is valid:**
+    ```bash
+    dbr --env-file .env --badge 1  # Test with badge ID 1
+    ```
+  </Accordion>
+  
+  <Accordion title="Can multiple people use the same token?">
+    **No, and you should never try this!**
+    
+    - Each token is unique to one Roblox account
+    - Sharing tokens is a major security risk
+    - Each person must use their own account's token
+    
+    If someone asks for your token, they're attempting to steal your account.
+  </Accordion>
+</AccordionGroup>
+
+## Usage & Features
+
+<AccordionGroup>
+  <Accordion title="What's the difference between --place, --user, and --group?">
+    Each argument targets different scopes:
+    
+    **`--place [ID]`**
+    - Processes a single place (game)
+    - Removes all badges from that place's universe
+    - Fastest option for targeting specific games
+    
+    **`--user [ID]`**
+    - Processes all public games by a user
+    - Scans each game for badges to remove
+    - Useful for removing all badges from a specific creator
+    
+    **`--group [ID]`**
+    - Processes all public games in a group
+    - Similar to `--user` but for group-owned games
+    - Note: Private group games won't be visible
+    
+    **Example workflow:**
+    ```bash
+    # Remove badges from one game
+    dbr -e .env --place 123456
+    
+    # Remove badges from all games by a user
+    dbr -e .env --user 789012
+    
+    # Remove badges from all public group games
+    dbr -e .env --group 345678
+    ```
+  </Accordion>
+  
+  <Accordion title="How do I scan an inventory without deleting badges?">
+    Use the `--check-inventory` argument:
+    
+    <Steps>
+      <Step title="Download spam lists">
+        ```bash
+        # Download badge chain lists
+        dbr --download-badge-spam-lists
+        
+        # Or download MetaGamerScore invalid list
+        dbr --download-mgs-invalid-list
+        ```
+      </Step>
+      
+      <Step title="Scan the inventory">
+        ```bash
+        # Scan any user's public inventory
+        dbr --check-inventory 12345
+        ```
+      </Step>
+      
+      <Step title="Review results">
+        Two files are created:
+        - `[user_id]_places.txt` - Places with spam badges
+        - `[user_id]_badges.txt` - Badge IDs found
+      </Step>
+    </Steps>
+    
+    **Note:** This operation does not require authentication and won't delete anything.
+  </Accordion>
+  
+  <Accordion title="What badge lists can I download?">
+    DBR provides two list sources:
+    
+    **1. MetaGamerScore Invalid List**
+    ```bash
+    dbr --download-mgs-invalid-list
+    ```
+    - Games flagged as problematic by MetaGamerScore
+    - May contain false positives
+    - Good for MetaGamerScore users who were invalidated
+    
+    **2. Badge Spam Lists**
+    ```bash
+    dbr --download-badge-spam-lists
+    ```
+    - Curated lists from [exurd/badge-spam-lists](https://github.com/exurd/badge-spam-lists)
+    - Contains known badge chains and spam games
+    - Multiple text files with place IDs
+    
+    **After downloading:**
+    ```bash
+    # Use lists for scanning
+    dbr --check-inventory 12345
+    
+    # Or process a specific list file
+    dbr -e .env --file dbr_cache/spam_list.txt
+    ```
+  </Accordion>
+  
+  <Accordion title="Can I remove badges from multiple sources at once?">
+    **Yes!** You can combine multiple input arguments:
+    
+    ```bash
+    # Remove badges from multiple places
+    dbr -e .env --place 123 --place 456 --place 789
+    
+    # Remove from a user and specific badges
+    dbr -e .env --user 12345 --badge 111 --badge 222
+    
+    # Combine different source types
+    dbr -e .env --file list.txt --place 999 --group 888
+    ```
+    
+    DBR processes each input sequentially in this order:
+    1. Single badges (`--badge`)
+    2. MetaGamerScore IDs (`--mgs-id`)
+    3. Places (`--place`)
+    4. Groups (`--group`)
+    5. Users (`--user`)
+    6. Files (`--file`)
+  </Accordion>
+  
+  <Accordion title="What does --use-bor-badge-database do?">
+    This flag switches to using the **Badgers of Robloxia (BoR)** API instead of Roblox's API.
+    
+    **When to use it:**
+    - You need to find disabled badges (hidden from Roblox API)
+    - A game has badges that aren't showing up normally
+    
+    **Drawbacks:**
+    - Significantly slower response times
+    - API requests can take a long time
+    - Not recommended for bulk operations
+    
+    **Better alternative:**
+    ```bash
+    # Use inventory scanning instead
+    dbr --check-inventory [your_user_id]
+    ```
+    
+    This finds all badges you actually own, including hidden ones, without the slow API calls.
+  </Accordion>
+</AccordionGroup>
+
+## Performance & Limits
+
+<AccordionGroup>
+  <Accordion title="How many badges can I delete at once?">
+    There's no hard limit, but practical considerations:
+    
+    **Rate limiting:**
+    - Roblox limits API requests per time period
+    - DBR automatically handles retries with backoff
+    - Expect longer processing times for large batches
+    
+    **Recommendations:**
+    - For 10-100 badges: Usually completes quickly
+    - For 100-1000 badges: May take 30-60 minutes
+    - For 1000+ badges: Split into multiple sessions
+    
+    **Example for large deletions:**
+    ```bash
+    # Process a large file in one session
+    dbr -e .env --file large_list.txt --delete-threads 2
+    
+    # DBR handles rate limits automatically
+    # Just let it run - don't restart if you see retries
+    ```
+  </Accordion>
+  
+  <Accordion title="Why is badge deletion so slow?">
+    Several factors affect speed:
+    
+    **Built-in delays:**
+    - 0.75s delay after successful deletion
+    - 3-5s delays between retry attempts
+    - Progressive backoff: 2s, 4s, 8s, 16s...
+    
+    **Network latency:**
+    - Request/response time to Roblox servers
+    - Varies based on your location and connection
+    
+    **Rate limiting:**
+    - Roblox throttles rapid requests
+    - DBR automatically waits and retries
+    
+    **To optimize (with caution):**
+    ```bash
+    # Increase threads (default is 2)
+    dbr -e .env --file list.txt --delete-threads 3
+    ```
+    
+    ⚠️ **Warning:** Higher thread counts increase rate limit risk
+  </Accordion>
+  
+  <Accordion title="What do I do if I'm getting rate limited?">
+    **Don't panic!** Rate limiting is normal for large operations.
+    
+    **DBR handles it automatically:**
+    - Detects 429 (Too Many Requests) responses
+    - Implements exponential backoff
+    - Retries up to 8 times per request
+    - You don't need to do anything
+    
+    **Best practices:**
+    
+    ✅ **Let it run** - Don't restart the program  
+    ✅ **Be patient** - Wait for automatic retries  
+    ✅ **Reduce threads** - Use `--delete-threads 1`  
+    ✅ **Off-peak hours** - Run during low-traffic times
+    
+    ❌ **Don't** keep restarting DBR  
+    ❌ **Don't** increase thread count during rate limits  
+    ❌ **Don't** run multiple DBR instances simultaneously
+  </Accordion>
+  
+  <Accordion title="Can I speed up the process?">
+    Yes, but with trade-offs:
+    
+    **Increase threads:**
+    ```bash
+    dbr -e .env --file list.txt --delete-threads 4
+    ```
+    - Processes more badges concurrently
+    - ⚠️ Higher rate limiting risk
+    - Recommended max: 3-4 threads
+    
+    **Optimize your input:**
+    - Use `--badge` for single badges (fastest)
+    - Use `--place` instead of `--user` when possible
+    - Avoid `--use-bor-badge-database` (very slow)
+    - Remove duplicates from file lists
+    
+    **System optimization:**
+    - Use a stable, fast internet connection
+    - Run during off-peak hours (late night/early morning)
+    - Close other applications using bandwidth
+    
+    **Realistic expectations:**
+    - Expect 2-5 seconds per badge
+    - Large operations take time - this is normal
+    - Rate limits will occur on very large batches
+  </Accordion>
+</AccordionGroup>
+
+## Technical Questions
+
+<AccordionGroup>
+  <Accordion title="Where does DBR store its cache?">
+    By default, DBR creates a `dbr_cache` directory in:
+    
+    - **Script version:** Your current working directory
+    - **Compiled version:** Same directory as the executable
+    
+    **Cache contents:**
+    - `checked_places.json` - Places already processed
+    - Downloaded spam lists
+    - Inventory scan results
+    
+    **Change cache location:**
+    ```bash
+    dbr -e .env --cache-directory /path/to/cache --place 123
+    ```
+    
+    **Clear cache:**
+    ```bash
+    rm -rf dbr_cache
+    ```
+  </Accordion>
+  
+  <Accordion title="What file formats does --file support?">
+    DBR accepts two formats:
+    
+    **1. Plain text (.txt)**
+    ```txt
+    https://www.roblox.com/games/123456789
+    https://www.roblox.com/badges/987654321
+    https://roblox.com/users/12345
+    ```
+    
+    **2. Zstandard compressed (.txt.zst)**
+    - Automatically decompressed by DBR
+    - Used by badge-spam-lists repository
+    - No manual extraction needed
+    
+    **URL patterns recognized:**
+    - `https://www.roblox.com/[type]/[id]`
+    - `https://roblox.com/[type]/[id]` (without www)
+    - Types: `games`, `badges`, `users`
+    
+    **One URL per line, no extra formatting needed.**
+  </Accordion>
+  
+  <Accordion title="Can I run DBR on a schedule or automate it?">
+    Yes! DBR works great with automation:
+    
+    **Cron job (Linux/Mac):**
+    ```bash
+    # Edit crontab
+    crontab -e
+    
+    # Run daily at 2 AM
+    0 2 * * * /usr/bin/python -m dbr --env-file /path/to/.env --file /path/to/list.txt
+    ```
+    
+    **Task Scheduler (Windows):**
+    - Create a batch file with your DBR command
+    - Use Task Scheduler to run it periodically
+    
+    **Script integration:**
+    ```python
+    import subprocess
+    
+    result = subprocess.run([
+        'python', '-m', 'dbr',
+        '--env-file', '.env',
+        '--place', '123456'
+    ])
+    ```
+    
+    **Best practices for automation:**
+    - Always use `--env-file` for credentials
+    - Log output to a file for monitoring
+    - Set up error notifications
+    - Don't run too frequently (respect rate limits)
+  </Accordion>
+  
+  <Accordion title="Does DBR work with Roblox API rate limits?">
+    **Yes, DBR is designed to handle rate limits gracefully.**
+    
+    **Built-in features:**
+    - Automatic retry with exponential backoff
+    - Up to 8 retry attempts per request
+    - Respects 429 (Too Many Requests) responses
+    - Progressive wait times: 2s → 4s → 8s → 16s → 32s
+    
+    **Rate limit handling:**
+    ```
+    Response Status Code: 429
+    Too many requests!
+    Sleeping 8 seconds for [URL]...
+    Attempt 3...
+    ```
+    
+    **No manual intervention needed** - DBR handles everything automatically.
+    
+    **HTTP adapter configuration:**
+    - Max retries: 5 (for connection errors)
+    - Timeouts: 60 seconds
+    - Connection pooling for efficiency
+  </Accordion>
+</AccordionGroup>
+
+## Common Scenarios
+
+<AccordionGroup>
+  <Accordion title="I was invalidated on MetaGamerScore. How do I clean up?">
+    <Steps>
+      <Step title="Download the invalid list">
+        ```bash
+        dbr --download-mgs-invalid-list
+        ```
+      </Step>
+      
+      <Step title="Scan your inventory">
+        ```bash
+        dbr --check-inventory [your_user_id]
+        ```
+        
+        Review the generated files to see what will be removed.
+      </Step>
+      
+      <Step title="Remove the badges">
+        ```bash
+        dbr -e .env --file dbr_cache/[your_user_id]_badges.txt
+        ```
+      </Step>
+      
+      <Step title="Verify on MetaGamerScore">
+        Check your profile to confirm you're no longer invalidated.
+      </Step>
+    </Steps>
+    
+    <Warning>
+      The MGS list may contain false positives. Review scan results before deletion!
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="How do I remove all badges from a badge chain?">
+    <Steps>
+      <Step title="Download badge chain lists">
+        ```bash
+        dbr --download-badge-spam-lists
+        ```
+      </Step>
+      
+      <Step title="Find the chain's file">
+        Look in `dbr_cache/` for the specific chain list.
+      </Step>
+      
+      <Step title="Process the list">
+        ```bash
+        dbr -e .env --file dbr_cache/[chain_name].txt
+        ```
+      </Step>
+    </Steps>
+    
+    **Popular badge chains:**
+    - Pls Donate chains
+    - Quick badge games
+    - Free badge games
+    
+    All are included in the badge-spam-lists repository.
+  </Accordion>
+  
+  <Accordion title="Can I remove badges from a deleted/private game?">
+    **Partially, depending on the situation:**
+    
+    **If you have the badge IDs:**
+    ```bash
+    # Remove specific badges directly
+    dbr -e .env --badge 123456 --badge 789012
+    ```
+    
+    **If the game is private but you have the place ID:**
+    ```bash
+    # Try with BoR database
+    dbr -e .env --use-bor-badge-database --place 123456
+    ```
+    
+    **If you only know you have spam badges:**
+    ```bash
+    # Scan your inventory
+    dbr --download-badge-spam-lists
+    dbr --check-inventory [your_user_id]
+    
+    # Then remove the found badges
+    dbr -e .env --file dbr_cache/[your_user_id]_badges.txt
+    ```
+    
+    **Note:** Badges from deleted games persist in your inventory until manually removed.
+  </Accordion>
+</AccordionGroup>
+
+## Still Have Questions?
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" icon="wrench" href="/reference/troubleshooting">
+    Common issues and solutions
+  </Card>
+  
+  <Card title="CLI Arguments" icon="terminal" href="/reference/cli-arguments">
+    Complete argument reference
+  </Card>
+  
+  <Card title="GitHub Issues" icon="github" href="https://github.com/exurd/dbr/issues">
+    Report bugs or request features
+  </Card>
+  
+  <Card title="Source Code" icon="code" href="https://github.com/exurd/dbr">
+    View the DBR repository
+  </Card>
+</CardGroup>

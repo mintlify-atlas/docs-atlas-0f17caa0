@@ -1,0 +1,377 @@
+---
+title: "Batch Removal Using Text Files"
+description: "Learn how to remove badges from multiple sources using text file lists"
+---
+
+## Overview
+
+The text file method allows you to batch process multiple removal operations from a single file. This is the most efficient way to clean up badges from multiple sources at once, and is particularly powerful when combined with downloaded spam lists.
+
+<Note>
+Text files support mixed URL types - you can include games, users, groups, and even individual badges all in one file.
+</Note>
+
+## Supported URL Formats
+
+DBR recognizes three types of Roblox URLs in text files:
+
+| Type | URL Format | What It Does |
+|------|------------|---------------|
+| **Badge** | `https://www.roblox.com/badges/12345` | Removes the specific badge if you own it |
+| **Game** | `https://www.roblox.com/games/12345` | Removes all badges from that game |
+| **User** | `https://www.roblox.com/users/12345` | Removes all badges from all games by that user |
+
+<Note>
+The `www.` prefix is optional. URLs with or without it will work correctly.
+</Note>
+
+## Creating a Text File
+
+<Steps>
+
+### Step 1: Create a New File
+
+Create a plain text file with one URL per line:
+
+```text
+https://www.roblox.com/games/606849621
+https://www.roblox.com/users/5201234
+https://www.roblox.com/badges/2124819458
+https://www.roblox.com/games/789456123
+```
+
+### Step 2: Save the File
+
+Save with a `.txt` extension (e.g., `badges_to_remove.txt`)
+
+<Warning>
+Make sure to save as `.txt` not `.json`. DBR processes these formats differently.
+</Warning>
+
+### Step 3: Run the Command
+
+Use the `--file` flag with the path to your text file:
+
+```bash
+dbr --file badges_to_remove.txt --env-file .env
+```
+
+</Steps>
+
+## Example Text File
+
+Here's a complete example showing mixed URL types:
+
+```text badges_to_remove.txt
+# Badge chain games
+https://www.roblox.com/games/606849621
+https://www.roblox.com/games/789456123
+https://www.roblox.com/games/456789012
+
+# Specific spam badges
+https://www.roblox.com/badges/2124819458
+https://www.roblox.com/badges/2125678901
+
+# Badge chain creators
+https://www.roblox.com/users/5201234
+https://www.roblox.com/users/6789012
+
+# Group-owned games
+https://www.roblox.com/groups/123456
+```
+
+<Note>
+Comments (lines starting with `#`) and blank lines are ignored.
+</Note>
+
+## Example Output
+
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Getting universe from 606849621...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----|
+Deleting badge 2124819458 from account...
+Response Status Code: 200
+Badge 2124819458 was successfully removed.
+|----||1||----|
+Searched all badges.
+
+Finding user 5201234...
+Searching player's games...
+Checking place 1...
+[... continues processing ...]
+```
+
+## Working with Downloaded Lists
+
+DBR can download and process pre-made spam lists:
+
+### MGS Invalid Games List
+
+<Steps>
+
+### Download the List
+
+```bash
+dbr --download-mgs-invalid-list
+```
+
+This creates two files:
+- `mgs_invalid_games.json` - Full JSON data
+- `mgs_invalid_games.txt` - Ready-to-use text file
+
+### Review the List
+
+<Warning>
+MetaGamerScore lists may contain false positives. Always review before bulk removal!
+</Warning>
+
+```bash
+head -n 20 mgs_invalid_games.txt
+```
+
+### Process the List
+
+```bash
+dbr --file mgs_invalid_games.txt --env-file .env
+```
+
+</Steps>
+
+### Badge Spam Lists
+
+<Steps>
+
+### Download Community Lists
+
+```bash
+dbr --download-badge-spam-lists
+```
+
+This downloads multiple categorized lists from [exurd/badge-spam-lists](https://github.com/exurd/badge-spam-lists).
+
+### Choose a List
+
+Extracted files will be in `badge-spam-lists-main/` directory:
+
+```bash
+ls badge-spam-lists-main/
+```
+
+### Process Specific Lists
+
+```bash
+dbr --file badge-spam-lists-main/chain-name.txt --env-file .env
+```
+
+</Steps>
+
+## Advanced File Formats
+
+### Zstandard Compressed Files
+
+DBR supports `.txt.zst` compressed files:
+
+```bash
+dbr --file large_list.txt.zst --env-file .env
+```
+
+<Note>
+Requires the `zstandard` Python library to be installed.
+</Note>
+
+### Mixed Content Files
+
+Combine different removal types in one file:
+
+```text comprehensive_cleanup.txt
+# Known spam developers
+https://www.roblox.com/users/5201234
+https://www.roblox.com/users/6789012
+
+# Specific problematic games
+https://www.roblox.com/games/606849621
+https://www.roblox.com/games/789456123
+
+# Individual badges to remove
+https://www.roblox.com/badges/2124819458
+
+# Spam game groups
+https://www.roblox.com/groups/123456
+```
+
+## Tips & Best Practices
+
+<CardGroup cols={2}>
+<Card title="Start Small" icon="flask">
+Test with a small file first to ensure everything works correctly before processing large lists.
+</Card>
+
+<Card title="Use Comments" icon="comment">
+Add comments with `#` to organize your file and explain what each section contains.
+</Card>
+
+<Card title="Cache Efficiency" icon="bolt">
+The checked places cache prevents duplicate processing across multiple runs.
+</Card>
+
+<Card title="Review MGS Lists" icon="triangle-exclamation">
+Always review MetaGamerScore lists before processing - they may include legitimate games.
+</Card>
+</CardGroup>
+
+## Performance Optimization
+
+### Increase Thread Count
+
+Speed up badge deletion:
+
+```bash
+dbr --file large_list.txt --delete-threads 4 --env-file .env
+```
+
+### Custom Cache Directory
+
+Use a dedicated cache directory for large operations:
+
+```bash
+dbr --file large_list.txt --cache-directory ./batch_cache --env-file .env
+```
+
+### Split Large Files
+
+For extremely large lists, split into smaller chunks:
+
+```bash
+split -l 1000 large_list.txt chunk_
+```
+
+Then process each chunk:
+
+```bash
+for file in chunk_*; do
+  dbr --file "$file" --env-file .env
+done
+```
+
+## How DBR Processes Each URL Type
+
+### Badge URLs
+
+```text
+https://www.roblox.com/badges/2124819458
+```
+
+1. Extracts badge ID: `2124819458`
+2. Checks if you own the badge
+3. Removes it if owned
+4. Skips if not owned
+
+### Game URLs
+
+```text
+https://www.roblox.com/games/606849621
+```
+
+1. Extracts place ID: `606849621`
+2. Checks cache for previous processing
+3. Runs full place removal if not cached
+4. Adds to cache when complete
+
+### User URLs
+
+```text
+https://www.roblox.com/users/5201234
+```
+
+1. Extracts user ID: `5201234`
+2. Fetches all user's public games
+3. Processes each game individually
+4. Respects cache for each place
+
+## Troubleshooting
+
+### "text file is empty or unreadable"
+
+**Cause**: File doesn't exist, is empty, or has encoding issues.
+
+**Solution**: Verify file path and ensure it contains valid URLs with UTF-8 encoding.
+
+### URLs Not Being Recognized
+
+**Cause**: URL format doesn't match expected pattern.
+
+**Solution**: Ensure URLs follow these formats:
+- `https://www.roblox.com/games/[ID]`
+- `https://www.roblox.com/users/[ID]`
+- `https://www.roblox.com/badges/[ID]`
+- `https://www.roblox.com/groups/[ID]`
+
+### Processing Takes Forever
+
+**Cause**: Large lists with many user/group URLs create cascading requests.
+
+**Solution**:
+- Use `--delete-threads` to increase parallelism
+- Process in smaller batches
+- Monitor progress and let it run overnight if needed
+
+### Some Badges Not Removed
+
+**Cause**: You may not own those badges, or they were already deleted.
+
+**Solution**: This is normal. DBR only removes badges you actually own.
+
+## Creating Custom Lists
+
+### Inventory Scanner Output
+
+Use the inventory scanner to generate a custom list:
+
+```bash
+dbr --check-inventory YOUR_USER_ID
+```
+
+This creates `found_places.txt` and `found_badges.txt` which can be used directly:
+
+```bash
+dbr --file found_places.txt --env-file .env
+```
+
+### Combining Multiple Lists
+
+Merge multiple lists into one:
+
+```bash
+cat list1.txt list2.txt list3.txt > combined_list.txt
+dbr --file combined_list.txt --env-file .env
+```
+
+### Deduplicating Lists
+
+Remove duplicate URLs:
+
+```bash
+sort -u input_list.txt > deduplicated_list.txt
+```
+
+## Related Methods
+
+- [Remove by Place](/guides/removing-by-place) - Single game removal
+- [Remove by User](/guides/removing-by-user) - All games from a user
+- [Remove by Group](/guides/removing-by-group) - All games from a group
+- [MetaGamerScore Integration](/guides/metagamerscore-integration) - Using MGS invalid game lists
+
+## Source Code Reference
+
+The text file processing logic is implemented in `delete_from_text_file()` at [remover.py:431](https://github.com/exurd/dbr/blob/main/src/dbr/modules/remover.py#L431).
+
+URL pattern matching uses regex at [remover.py:21](https://github.com/exurd/dbr/blob/main/src/dbr/modules/remover.py#L21):
+
+```python
+ROBLOX_URL_PATTERN = re.compile(r"https?:\/\/(?:www\.)?roblox\.com\/([A-Za-z]+)\/([0-9]+)")
+```

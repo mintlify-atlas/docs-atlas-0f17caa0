@@ -1,0 +1,218 @@
+---
+title: Environment Files
+description: Using .env files to securely configure DBR
+---
+
+## Why Use Environment Files?
+
+Environment files (`.env` files) allow you to configure DBR without:
+- Cluttering your terminal with long command-line arguments
+- Risking your ROBLOSECURITY token being exposed in command history
+- Accidentally sharing sensitive information when copying terminal output
+
+<Info>
+  Using `.env` files is the **recommended way** to configure DBR, especially for storing your ROBLOSECURITY token.
+</Info>
+
+## Creating Your Environment File
+
+<Steps>
+  <Step title="Copy the Example File">
+    DBR includes an example environment file called `.example_env` in the repository. Copy this file and rename it to `.env`:
+    
+    ```bash
+    cp .example_env .env
+    ```
+    
+    <Warning>
+      Never use `.example_env` directly as your environment file. Always create a copy.
+    </Warning>
+  </Step>
+  
+  <Step title="Edit the File">
+    Open your `.env` file in a text editor and configure the settings.
+  </Step>
+  
+  <Step title="Secure the File">
+    Ensure your `.env` file is not shared or committed to version control.
+    
+    ```bash .gitignore
+    # Add to your .gitignore
+    .env
+    ```
+  </Step>
+</Steps>
+
+## Environment File Structure
+
+Here's the structure of the `.env` file:
+
+```bash .env
+# Roblox Token:
+# THIS PROGRAM DOES NOT AUTOMATICALLY GRAB YOUR ROBLOX TOKEN FOR YOU!
+# Be careful on scripts that "automatically" find your token;
+# it takes one backdoor for your account to be stolen!
+#
+# DO NOT SHARE THE .ENV FILE TO OTHERS ONCE YOU HAVE PUT YOUR TOKEN IN.
+# DOING SO WILL LEAD TO HACKERS STEALING YOUR ACCOUNT!
+# IF YOU ACCIDENTALLY LEAK YOUR TOKEN, LOG OUT AS SOON AS POSSIBLE TO
+# INVALIATE THE TOKEN.
+#
+# Info on safely getting your token can be found on this page:
+# https://ro.py.jmk.gg/dev/tutorials/roblosecurity/
+RBX_TOKEN="_|NOTICE:-THIS-IS-NOT-A-REAL-TOKEN.|_dQw4w9WgXcQ"
+
+# Technical stuff below:
+# User Agent:
+USER_AGENT=""
+```
+
+## Configuration Options
+
+### RBX_TOKEN (Required)
+
+Your ROBLOSECURITY token for authentication.
+
+```bash
+RBX_TOKEN="_|WARNING:-DO-NOT-SHARE-THIS.--Your-Token-Here"
+```
+
+<Warning>
+  Replace the example token with your actual ROBLOSECURITY token. See [Authentication](/configuration/authentication) for how to get your token safely.
+</Warning>
+
+### USER_AGENT (Optional)
+
+Custom user agent string for HTTP requests made by DBR.
+
+```bash
+USER_AGENT="MyCustomUserAgent/1.0"
+```
+
+<Info>
+  If not specified, DBR will use its default user agent: `DBR/{version}`
+</Info>
+
+## Using Your Environment File
+
+Once you've created and configured your `.env` file, use it with the `--env-file` flag:
+
+```bash
+dbr --env-file .env --place 123456
+```
+
+You can also use the short flag `-e`:
+
+```bash
+dbr -e .env --place 123456
+```
+
+### Custom File Names
+
+You can use any filename for your environment file:
+
+```bash
+dbr --env-file my-config.env --place 123456
+dbr --env-file ~/.dbr-config --place 123456
+```
+
+## Priority and Overrides
+
+If you specify both an environment file **and** command-line arguments, the command-line arguments take priority:
+
+```bash
+# Token from .env is used
+dbr --env-file .env --place 123456
+
+# Token from command line overrides .env
+dbr --env-file .env --rbx-token "different-token" --place 123456
+```
+
+This allows you to:
+- Store default settings in `.env`
+- Override specific settings when needed via command line
+
+## Security Best Practices
+
+<Warning>
+  **CRITICAL: Never commit `.env` files to version control!**
+  
+  Once you add your ROBLOSECURITY token to the `.env` file:
+  - **DO NOT** share the file with others
+  - **DO NOT** commit it to Git/GitHub
+  - **DO NOT** upload it anywhere online
+  - **DO NOT** send it in Discord/messages
+</Warning>
+
+### Protecting Your .env File
+
+<Steps>
+  <Step title="Add to .gitignore">
+    Always add `.env` to your `.gitignore` file:
+    
+    ```bash .gitignore
+    # Environment files
+    .env
+    .env.local
+    *.env
+    ```
+  </Step>
+  
+  <Step title="Set File Permissions">
+    On Linux/Mac, restrict file permissions:
+    
+    ```bash
+    chmod 600 .env
+    ```
+    
+    This ensures only you can read the file.
+  </Step>
+  
+  <Step title="Keep Backups Secure">
+    If you back up your `.env` file, ensure backups are encrypted and stored securely.
+  </Step>
+</Steps>
+
+## Multiple Environment Files
+
+You can maintain multiple environment files for different purposes:
+
+```
+project/
+├── .env.main       # Your main account
+├── .env.alt        # An alternate account
+└── .env.test       # Testing configuration
+```
+
+Use them by specifying the file path:
+
+```bash
+dbr --env-file .env.main --place 123456
+dbr --env-file .env.alt --place 123456
+```
+
+<Warning>
+  Remember: **ALL** `.env` files containing tokens should be kept secure and never shared.
+</Warning>
+
+## If You Leak Your Token
+
+If your `.env` file or token is accidentally leaked:
+
+<Steps>
+  <Step title="Log Out Immediately">
+    Log out of Roblox on all devices immediately. This will invalidate your ROBLOSECURITY token.
+  </Step>
+  
+  <Step title="Change Your Password">
+    Change your Roblox password as an extra precaution.
+  </Step>
+  
+  <Step title="Enable 2FA">
+    If not already enabled, turn on two-factor authentication for your Roblox account.
+  </Step>
+  
+  <Step title="Create a New .env File">
+    After logging back in, get a new token and create a fresh `.env` file.
+  </Step>
+</Steps>

@@ -1,0 +1,270 @@
+---
+title: "Removing Badges by Group"
+description: "Learn how to remove all badges from games owned by a Roblox group or community"
+---
+
+## Overview
+
+The group removal method allows you to remove badges from all public games owned by a Roblox group (also called communities). This is particularly useful for badge chains or spam games operated by group organizations.
+
+<Note>
+Only public games are visible through the Roblox API. Private or group-only games will not be processed.
+</Note>
+
+## How It Works
+
+When you specify a group ID, DBR performs the following steps:
+
+1. Fetches all public games owned by the group (paginated, 100 at a time)
+2. For each game, extracts the root place ID
+3. Checks if the place has already been processed (using cache)
+4. Runs the place removal process for each unique game
+5. Continues to the next page until all games are processed
+
+<Steps>
+
+### Step 1: Find the Group ID
+
+Navigate to the group's page on Roblox and copy the group ID from the URL:
+
+```
+https://www.roblox.com/groups/123456/Group-Name
+                             ^^^^^^
+                             Group ID
+```
+
+### Step 2: Run the Command
+
+Use the `--group` (or `-g`) flag with the group ID:
+
+```bash
+dbr --group 123456 --rbx-token YOUR_TOKEN
+```
+
+Alternatively, use `--community` (same as `--group`):
+
+```bash
+dbr -g 123456 --env-file .env
+```
+
+### Step 3: Monitor the Process
+
+DBR will display progress as it processes each game:
+
+```
+Finding group 123456...
+Searching group's games...
+Checking place 1...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 789456123...
+Searching universe's badges...
+[... badge removal process ...]
+--------------
+^^^^^^^^^^^^^^
+```
+
+</Steps>
+
+## Example Output
+
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Finding group 567890...
+Searching group's games...
+Checking place 1...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 789456123...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----|
+Deleting badge 2125678901 from account...
+Deleting 789456123...
+Response Status Code: 200
+Badge 2125678901 was successfully removed.
+|----||1||----|
+All badges on the page have been removed.
+Searched all badges.
+--------------
+^^^^^^^^^^^^^^
+Checking place 2...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 456789012...
+Searching universe's badges...
+Searched all badges.
+--------------
+^^^^^^^^^^^^^^
+Searched all games.
+```
+
+## Key Differences from User Removal
+
+| Feature | Group Removal | User Removal |
+|---------|---------------|---------------|
+| Games per page | 100 | 50 |
+| Access filter | Public only | Public only |
+| API endpoint | `/v2/groups/{id}/games` | `/v2/users/{id}/games` |
+| Private games | Not included | Not included |
+
+## Advanced Options
+
+### Using BoR Database
+
+Process disabled badges using the Badgers of Robloxia API:
+
+```bash
+dbr --group 123456 --use-bor-badge-database --env-file .env
+```
+
+<Warning>
+BoR API requests can take significantly longer to complete. Use only when needed for hidden badges.
+</Warning>
+
+### Custom Cache Location
+
+Store cache files in a custom directory:
+
+```bash
+dbr --group 123456 --cache-directory ./group_cache --env-file .env
+```
+
+### Increased Parallelism
+
+Speed up badge deletion with more threads:
+
+```bash
+dbr --group 123456 --delete-threads 4 --env-file .env
+```
+
+## Tips & Best Practices
+
+<CardGroup cols={2}>
+<Card title="API Pagination" icon="bars-progress">
+Groups can have many games. DBR automatically handles pagination to process all of them.
+</Card>
+
+<Card title="Cache Sharing" icon="database">
+The checked places cache is shared across all removal methods, preventing duplicate work.
+</Card>
+
+<Card title="Group vs Community" icon="users">
+Both `--group` and `--community` flags work identically. Use whichever you prefer.
+</Card>
+
+<Card title="Public Games Only" icon="eye">
+Roblox API limitations mean private group games cannot be processed. Make games public first if needed.
+</Card>
+</CardGroup>
+
+## Common Use Cases
+
+### Badge Chain Groups
+
+Many organized badge chains are run by groups:
+
+```bash
+dbr --group 567890 --env-file .env
+```
+
+### Group-Owned Spam Games
+
+Groups that host multiple low-quality badge games:
+
+```bash
+dbr --group 123456 --env-file .env
+```
+
+### Event Badge Groups
+
+Temporary events or promotions that created unwanted badges:
+
+```bash
+dbr --group 789012 --env-file .env
+```
+
+## Understanding the Cache
+
+DBR creates `checked_places.json` in the cache directory:
+
+```json
+[
+  789456123,
+  456789012,
+  234567890
+]
+```
+
+Each place ID is added after processing. This prevents:
+- Duplicate API calls
+- Redundant badge checks
+- Wasted processing time
+
+### When to Clear the Cache
+
+Clear the cache if:
+- A group added new games you want to process
+- You want to recheck places for new badges
+- The cache became corrupted
+
+```bash
+rm dbr_cache/checked_places.json
+```
+
+## Troubleshooting
+
+### "Error in group_json"
+
+**Cause**: Invalid group ID or the group has no public games.
+
+**Solution**: Verify the group ID is correct and the group has public games.
+
+### "Already checked place, skipping..."
+
+**Cause**: The place was processed in a previous run or earlier in the current session.
+
+**Solution**: This is normal behavior. DBR is efficiently skipping already-processed places.
+
+### No Badges Found
+
+**Cause**: The group's games either have no badges or you don't own any.
+
+**Solution**: Use `--check-inventory` first to verify which badges you have from this group.
+
+### Rate Limiting
+
+**Cause**: Too many requests to Roblox API in a short time.
+
+**Solution**: DBR includes automatic retry logic with exponential backoff. Let it handle rate limits automatically.
+
+## Combining with Other Methods
+
+You can process multiple sources in a single text file:
+
+```text
+https://www.roblox.com/groups/123456
+https://www.roblox.com/groups/789012
+https://www.roblox.com/users/555555
+https://www.roblox.com/games/999999
+```
+
+Then run:
+
+```bash
+dbr --file mixed_sources.txt --env-file .env
+```
+
+See [Using Text Files](/guides/using-text-files) for more details.
+
+## Related Methods
+
+- [Remove by Place](/guides/removing-by-place) - Remove badges from a single specific game
+- [Remove by User](/guides/removing-by-user) - Remove badges from a user's games
+- [Using Text Files](/guides/using-text-files) - Batch process multiple groups from a list
+
+## Source Code Reference
+
+The group removal logic is implemented in `delete_from_group()` at [remover.py:379](https://github.com/exurd/dbr/blob/main/src/dbr/modules/remover.py#L379).

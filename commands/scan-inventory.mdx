@@ -1,0 +1,440 @@
+---
+title: Inventory Scanning
+description: Scan Roblox inventories for spam badges without removing them
+---
+
+The inventory scanner analyzes a user's badge inventory and identifies potential spam badges by comparing them against known spam lists. **This command does not delete badges** - it only generates reports.
+
+## Basic Usage
+
+<ParamField path="--check-inventory" type="integer" required>
+  User ID whose inventory you want to scan
+  
+  **Aliases:** `-c`, `USER_ID`
+</ParamField>
+
+```bash
+dbr --check-inventory 123456789
+```
+
+<Warning>
+  This command does **not** require authentication (no `--rbx-token` needed) since it only reads public badge data.
+</Warning>
+
+---
+
+## Prerequisites
+
+Before scanning, you must download spam detection lists:
+
+<CodeGroup>
+```bash Download Both Lists
+dbr --download-mgs-invalid-list
+dbr --download-badge-spam-lists
+```
+
+```bash Quick Setup
+# Download lists first
+dbr --download-mgs-invalid-list
+dbr --download-badge-spam-lists
+
+# Then scan an inventory
+dbr --check-inventory 123456789
+```
+</CodeGroup>
+
+See [Download Lists](/commands/download-lists) for more details on spam detection sources.
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Load Spam Lists">
+    Compiles spam detection lists from:
+    - `mgs_invalid_games.json` (MetaGamerScore)
+    - `badge-spam-lists-main/*.txt.zst` (Community lists)
+    - `spam_badges.txt` (optional custom list)
+  </Step>
+  
+  <Step title="Convert to Frozensets">
+    Optimizes lookup performance by converting lists to frozensets
+  </Step>
+  
+  <Step title="Scan Badge Inventory">
+    Fetches all badges from the user's inventory (100 per page)
+  </Step>
+  
+  <Step title="Match Against Lists">
+    Compares each badge's place ID and badge ID against spam lists
+  </Step>
+  
+  <Step title="Generate Reports">
+    Creates timestamped output files with found badges and places
+  </Step>
+</Steps>
+
+---
+
+## Output Files
+
+The scanner creates a timestamped folder with multiple output files:
+
+### Folder Structure
+
+```
+scanresults_{USER_ID}_{TIMESTAMP}/
+├── scanresults_{USER_ID}_{TIMESTAMP}_BADGES.txt
+├── scanresults_{USER_ID}_{TIMESTAMP}_GAMES.txt
+├── results.log
+├── spam_places_list.json
+├── spam_badges_list.json
+└── badge_inventory/
+    ├── {USER_ID}_1.json
+    ├── {USER_ID}_2.json
+    └── ...
+```
+
+### File Descriptions
+
+<AccordionGroup>
+  <Accordion title="scanresults_{USER_ID}_{TIMESTAMP}_BADGES.txt">
+    List of Roblox badge URLs that matched spam lists:
+    ```text
+    https://www.roblox.com/badges/2124858409
+    https://www.roblox.com/badges/2124858410
+    https://www.roblox.com/badges/2124858411
+    ```
+    
+    **Usage:** Feed this directly to DBR for badge removal:
+    ```bash
+    dbr --env-file .env --file scanresults_123456789_1234567890_BADGES.txt
+    ```
+  </Accordion>
+  
+  <Accordion title="scanresults_{USER_ID}_{TIMESTAMP}_GAMES.txt">
+    List of Roblox game URLs containing spam badges:
+    ```text
+    https://www.roblox.com/games/1818
+    https://www.roblox.com/games/534706382
+    ```
+    
+    **Usage:** Remove all badges from these games:
+    ```bash
+    dbr --env-file .env --file scanresults_123456789_1234567890_GAMES.txt
+    ```
+  </Accordion>
+  
+  <Accordion title="results.log">
+    Detailed log with timestamps and source information:
+    ```log
+    12:34:56,789 INFO Badge: 2124858409 | Place: 1818 (from: mgs_invalid_games.json)
+    12:34:58,123 INFO Badge: 2124858410 | Place: 1818 (from: badge_chain_xyz.txt.zst)
+    ```
+  </Accordion>
+  
+  <Accordion title="spam_places_list.json">
+    Compiled dictionary of all spam place IDs organized by source:
+    ```json
+    {
+      "mgs_invalid_games.json": [1818, 534706382],
+      "badge_chain_abc.txt.zst": [1818, 9876543]
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="spam_badges_list.json">
+    Compiled list of spam badge IDs (if `spam_badges.txt` exists):
+    ```json
+    {
+      "spam_badges.txt": [2124858409, 2124858410]
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="badge_inventory/*.json">
+    Raw badge inventory data from Roblox API (one file per page):
+    ```json
+    {
+      "data": [
+        {
+          "id": 2124858409,
+          "name": "Badge Name",
+          "awarder": {"id": 1818},
+          "awardedDate": "2024-01-01T00:00:00Z"
+        }
+      ],
+      "nextPageCursor": "abc123"
+    }
+    ```
+    
+    Useful for manual analysis or debugging.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Example Session
+
+<Tabs>
+  <Tab title="Command">
+    ```bash
+    dbr --check-inventory 123456789
+    ```
+  </Tab>
+  
+  <Tab title="Output">
+    ```
+    Dumb Badge(s) Remover 1.0.0
+    copyright (c) 2023, 2025 exurd
+
+    Creating list of spam place IDs...
+    Creating list of spam badge IDs...
+
+    Next page (1)...
+    ---
+    Place 1818 found in ['mgs_invalid_games.json']
+    Badge 2124858409 found in []
+    Place 534706382 found in ['badge_chain_abc.txt.zst']
+    Badge 2124858410 found in []
+    Found 2 place(s), 2 badge(s).
+    Checking next page of badges...
+
+    Next page (2)...
+    ---
+    Found 2 place(s), 2 badge(s).
+    Searched all badges.
+    ```
+  </Tab>
+  
+  <Tab title="Files Created">
+    ```bash
+    $ ls -R scanresults_123456789_1234567890/
+    
+    scanresults_123456789_1234567890/:
+    scanresults_123456789_1234567890_BADGES.txt
+    scanresults_123456789_1234567890_GAMES.txt
+    results.log
+    spam_places_list.json
+    spam_badges_list.json
+    badge_inventory/
+    
+    scanresults_123456789_1234567890/badge_inventory/:
+    123456789_1.json
+    123456789_2.json
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Detection Logic
+
+### Place ID Matching
+
+For each badge, the scanner checks if its **place ID** (awarder ID) appears in any spam list:
+
+```python
+place_id = badge_entry['awarder']['id']
+if place_id in PLACE_SPAM:
+    # Match found - save badge and place
+```
+
+If a place is found in spam lists, **all badges from that place are flagged**, even if earned from subsequent pages.
+
+### Badge ID Matching
+
+The scanner also checks individual **badge IDs** against `spam_badges.txt`:
+
+```python
+badge_id = badge_entry['id']
+if badge_id in BADGE_SPAM:
+    # Match found - save badge
+```
+
+This catches specific spam badges even if their place isn't listed.
+
+### Optimization
+
+Once a place is identified as spam:
+- All future badges from that place are automatically flagged
+- Place name lookups are skipped for performance
+- Badges are saved without making additional HEAD requests
+
+---
+
+## Using Scan Results
+
+### Remove All Found Badges
+
+Use the generated `BADGES.txt` file:
+
+```bash
+dbr --env-file .env --file scanresults_123456789_1234567890_BADGES.txt
+```
+
+### Remove by Game (Safer)
+
+Use the `GAMES.txt` file to remove badges place-by-place:
+
+```bash
+dbr --env-file .env --file scanresults_123456789_1234567890_GAMES.txt
+```
+
+<Info>
+  Removing by game is safer because DBR will only delete badges you actually own from each place, rather than attempting to delete every badge ID found.
+</Info>
+
+### Selective Removal
+
+Manually review and edit the output files before deletion:
+
+1. Open `scanresults_*_BADGES.txt` or `scanresults_*_GAMES.txt`
+2. Remove lines for badges/games you want to keep
+3. Save the file
+4. Run DBR with the edited file
+
+---
+
+## Custom Spam Lists
+
+### Adding Custom Badge IDs
+
+Create a `spam_badges.txt` file in the current directory:
+
+```text spam_badges.txt
+2124858409
+2124858410
+2124858411
+```
+
+The scanner automatically includes this file if it exists.
+
+### File Format
+
+- One badge ID per line
+- No URLs, just numeric IDs
+- Empty lines are ignored
+
+---
+
+## Performance Considerations
+
+### Scan Speed
+
+- Processes 100 badges per page
+- API rate limits apply (automatic delays between pages)
+- Typical inventory: 2-5 seconds per page
+- Large inventories (10,000+ badges): 5-10 minutes
+
+### Memory Usage
+
+The scanner uses frozensets for O(1) lookup performance:
+- Small inventories: < 50 MB RAM
+- Large inventories: 50-200 MB RAM
+- Badge spam lists: ~10-30 MB RAM
+
+<Info>
+  Frozensets provide constant-time lookups regardless of list size, making scans efficient even with large spam databases.
+</Info>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Could not compile scan list">
+    **Cause:** Missing spam detection lists
+    
+    **Solution:** Download required lists first:
+    ```bash
+    dbr --download-mgs-invalid-list
+    dbr --download-badge-spam-lists
+    ```
+  </Accordion>
+  
+  <Accordion title="Could not import zstandard python library">
+    **Cause:** Missing `zstandard` package (required for `.txt.zst` files)
+    
+    **Solution:** Install the package:
+    ```bash
+    pip install zstandard
+    ```
+  </Accordion>
+  
+  <Accordion title="Error reading file {filename}">
+    **Cause:** Corrupted `.txt.zst` file
+    
+    **Solution:** Re-download badge spam lists:
+    ```bash
+    rm -rf badge-spam-lists-main/
+    dbr --download-badge-spam-lists
+    ```
+  </Accordion>
+  
+  <Accordion title="User inventory is private">
+    **Cause:** User has privacy settings enabled
+    
+    **Solution:** User must disable inventory privacy in Roblox settings. Only public inventories can be scanned.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Comparison with Direct Removal
+
+<Tabs>
+  <Tab title="Inventory Scanning">
+    **Pros:**
+    - Preview what will be deleted
+    - No authentication required
+    - Generate reusable lists
+    - Review before deletion
+    - Safe for testing
+    
+    **Cons:**
+    - Two-step process (scan then delete)
+    - Requires spam list downloads
+    - Only detects known spam
+  </Tab>
+  
+  <Tab title="Direct Removal">
+    **Pros:**
+    - One-step process
+    - Remove specific badges immediately
+    - Works without spam lists
+    - More control over targets
+    
+    **Cons:**
+    - No preview before deletion
+    - Requires authentication
+    - Permanent action
+    - Must know badge/place IDs
+  </Tab>
+</Tabs>
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Review Before Deleting" icon="magnifying-glass">
+    Always check the output files before feeding them to DBR for deletion
+  </Card>
+  
+  <Card title="Keep Lists Updated" icon="arrows-rotate">
+    Periodically re-download spam lists to catch new badge chains
+  </Card>
+  
+  <Card title="Backup Results" icon="floppy-disk">
+    Save scan results for future reference or analysis
+  </Card>
+  
+  <Card title="Start with GAMES.txt" icon="shield">
+    Use the games file for safer, place-by-place removal
+  </Card>
+</CardGroup>
+
+<Note>
+  The scanner generates URLs with proper redirects when possible, but some badge/place URLs may redirect to error pages if the content has been deleted by Roblox.
+</Note>

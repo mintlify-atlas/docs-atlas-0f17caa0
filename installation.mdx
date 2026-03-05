@@ -1,0 +1,76 @@
+---
+title: Installation
+description: Install DBR on your system using pip, pipx, or uv
+---
+
+## Requirements
+
+DBR requires Python 3.11 or higher. Make sure you have Python installed before proceeding.
+
+<Note>
+  You can check your Python version by running `python --version` or `python3 --version` in your terminal.
+</Note>
+
+## Installation Methods
+
+DBR can be installed using various Python package managers. Choose the method that works best for you.
+
+<CodeGroup>
+
+```bash pip
+pip install git+https://github.com/exurd/dbr
+```
+
+```bash pipx
+pipx install git+https://github.com/exurd/dbr
+```
+
+```bash uv
+uv pip install git+https://github.com/exurd/dbr
+```
+
+</CodeGroup>
+
+<Note>
+  Using `pipx` is recommended if you want to install DBR as an isolated command-line tool without affecting your global Python environment.
+</Note>
+
+## Verify Installation
+
+After installation, verify that DBR is installed correctly by checking the version:
+
+```bash
+dbr --version
+```
+
+You should see output similar to:
+
+```
+Dumb Badge(s) Remover 1.0.0
+```
+
+## Running DBR
+
+Once installed, you can run DBR using either of these commands:
+
+```bash
+dbr [COMMAND]
+```
+
+or
+
+```bash
+python -m dbr [COMMAND]
+```
+
+<Tip>
+  Add the `-h` or `--help` flag to see all available commands and options:
+  
+  ```bash
+  dbr --help
+  ```
+</Tip>
+
+## Next Steps
+
+Now that you have DBR installed, you'll need to set up authentication to start removing badges. Continue to the [Quickstart Guide](/quickstart) to learn how to configure and use DBR.

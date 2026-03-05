@@ -1,0 +1,171 @@
+---
+title: Commands Overview
+description: Complete reference for all DBR commands
+---
+
+DBR provides multiple commands for removing badges and scanning your Roblox inventory. All commands require authentication with a `.ROBLOSECURITY` token.
+
+## Available Commands
+
+<CardGroup cols={2}>
+  <Card title="Badge Removal" icon="trash" href="/commands/remove-badges">
+    Remove badges by ID, place, user, group, or file
+  </Card>
+  <Card title="Inventory Scanning" icon="magnifying-glass" href="/commands/scan-inventory">
+    Scan a user's inventory for spam badges
+  </Card>
+  <Card title="Download Lists" icon="download" href="/commands/download-lists">
+    Download MetaGamerScore and badge spam lists
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/options">
+    Configure DBR with environment variables and settings
+  </Card>
+</CardGroup>
+
+## Authentication
+
+All removal commands require Roblox authentication using one of these methods:
+
+<Tabs>
+  <Tab title="Environment File">
+    ```bash
+    dbr --env-file .env --badge 123456789
+    ```
+    
+    Create a `.env` file with:
+    ```
+    RBX_TOKEN=your_roblosecurity_token_here
+    USER_AGENT=DBR/1.0.0
+    ```
+  </Tab>
+  <Tab title="Command Line">
+    ```bash
+    dbr --rbx-token "your_token_here" --badge 123456789
+    ```
+    
+    <Warning>
+      Using tokens on command line may expose them in shell history. Use environment files for better security.
+    </Warning>
+  </Tab>
+</Tabs>
+
+<Warning>
+  **Never share your `.ROBLOSECURITY` token with anyone!** This token provides full access to your Roblox account.
+</Warning>
+
+## Global Options
+
+These options work with all commands:
+
+<ParamField path="--version" type="flag">
+  Show DBR version and exit
+</ParamField>
+
+<ParamField path="--env-file" type="string" default="none">
+  Path to `.env` file containing `RBX_TOKEN` and other settings
+</ParamField>
+
+<ParamField path="--rbx-token" type="string" default="none">
+  Your `.ROBLOSECURITY` token for authentication
+</ParamField>
+
+<ParamField path="--cache-directory" type="string" default="./dbr_cache">
+  Directory where cache data is stored
+</ParamField>
+
+<ParamField path="--delete-threads" type="integer" default="2">
+  Number of concurrent threads for badge deletion (increases speed)
+</ParamField>
+
+<ParamField path="--user-agent" type="string" default="DBR/{version}">
+  Custom user agent for HTTP requests
+</ParamField>
+
+<ParamField path="--use-bor-badge-database" type="flag">
+  Use Badgers of Robloxia's database to find disabled badges. **Note:** Requests can be very slow.
+</ParamField>
+
+## Quick Start
+
+<Steps>
+  <Step title="Install DBR">
+    ```bash
+    pip install dbr
+    ```
+  </Step>
+  
+  <Step title="Create Environment File">
+    Create a `.env` file with your Roblox token:
+    ```
+    RBX_TOKEN=your_roblosecurity_token
+    ```
+  </Step>
+  
+  <Step title="Run a Command">
+    Remove badges from a specific place:
+    ```bash
+    dbr --env-file .env --place 123456789
+    ```
+  </Step>
+</Steps>
+
+## Command Categories
+
+### Badge Removal
+
+Remove badges from your inventory using various methods:
+
+- **By Badge ID** - Remove a specific badge
+- **By Place ID** - Remove all badges from a game
+- **By User ID** - Remove all badges from a user's games
+- **By Group ID** - Remove all badges from a group's games
+- **By File** - Remove badges from a list of URLs
+- **By MGS ID** - Remove badges using MetaGamerScore game ID
+
+See the [Badge Removal](/commands/remove-badges) page for detailed examples.
+
+### Inventory Scanning
+
+Scan a user's badge inventory to identify spam badges without removing them:
+
+```bash
+dbr --check-inventory 123456789
+```
+
+This generates output files you can use with the `--file` command for batch removal.
+
+See the [Inventory Scanning](/commands/scan-inventory) page for details.
+
+### List Downloads
+
+Download curated lists of spam games:
+
+- **MetaGamerScore Invalid Games** - Games detected as problematic
+- **Badge Spam Lists** - Community-maintained lists of badge chains
+
+See the [Download Lists](/commands/download-lists) page for usage.
+
+## Safety Features
+
+<Info>
+  DBR includes several safety features:
+  - Checks if badges exist before attempting removal
+  - Verifies badge ownership before deletion
+  - Automatic retry logic with exponential backoff
+  - Caches checked places to avoid duplicate processing
+  - Rate limiting to comply with Roblox API limits
+</Info>
+
+## Getting Help
+
+<CodeGroup>
+```bash Show Help
+dbr --help
+```
+
+```bash Show Version
+dbr --version
+```
+</CodeGroup>
+
+For additional support, visit the [GitHub repository](https://github.com/exurd/dumb-badges-remover).

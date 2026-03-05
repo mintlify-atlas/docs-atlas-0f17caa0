@@ -1,80 +1,310 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with DBR in minutes - from installation to your first badge removal
 ---
 
-## Get started in three steps
+This guide will walk you through setting up DBR and removing your first badge.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before starting, make sure you have:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+- Python 3.11 or higher installed
+- A Roblox account with badges you want to remove
 
-### Step 2: Deploy your changes
+## Step 1: Install DBR
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+If you haven't already installed DBR, choose your preferred package manager:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<CodeGroup>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash pip
+pip install git+https://github.com/exurd/dbr
+```
 
-### Step 3: Go live
+```bash pipx
+pipx install git+https://github.com/exurd/dbr
+```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+```bash uv
+uv pip install git+https://github.com/exurd/dbr
+```
 
-## Next steps
+</CodeGroup>
 
-Now that you have your docs running, explore these key features:
+## Step 2: Get Your ROBLOSECURITY Token
 
-<CardGroup cols={2}>
+<Warning>
+  Your ROBLOSECURITY token is extremely sensitive. Anyone with access to this token can control your Roblox account, steal Robux, upload bannable content, or delete your account.
+  
+  **NEVER share your token with anyone, not even friends!**
+</Warning>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+To authenticate with Roblox, you need to extract your ROBLOSECURITY token:
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+1. Visit the [ro.py guide](https://ro.py.jmk.gg/v2.0.0/tutorials/roblosecurity/) for detailed instructions on how to safely export your token
+2. Copy the token value (it will be a long string starting with `_|WARNING:`)
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+## Step 3: Set Up Authentication
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+There are two ways to provide your token to DBR. Using an `.env` file is recommended for security.
 
-</CardGroup>
+<Tabs>
+  <Tab title="Using .env file (Recommended)">
+    <Steps>
+      <Step title="Create a .env file">
+        Create a new file named `.env` in your working directory:
+
+        ```bash
+        touch .env
+        ```
+      </Step>
+
+      <Step title="Add your token">
+        Open the `.env` file and add your ROBLOSECURITY token:
+
+        ```bash .env
+        RBX_TOKEN="_|WARNING:-THIS-IS-A-FAKE-TOKEN|_dQw4w9WgXcQ"
+        USER_AGENT=""
+        ```
+
+        Replace the token value with your actual ROBLOSECURITY token.
+
+        <Warning>
+          Do NOT commit this file to version control. Add `.env` to your `.gitignore` file.
+        </Warning>
+      </Step>
+
+      <Step title="Use the .env file">
+        When running DBR, specify the `.env` file using the `--env-file` or `-e` flag:
+
+        ```bash
+        dbr --env-file .env [OTHER_COMMANDS]
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Using command-line argument">
+    You can pass your token directly as a command-line argument:
+
+    ```bash
+    dbr --rbx-token "YOUR_TOKEN_HERE" [OTHER_COMMANDS]
+    ```
+
+    <Warning>
+      This method is less secure as your token may be visible in terminal history or process lists. Use the `.env` file method instead.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Step 4: Remove Your First Badge
+
+Now you're ready to remove badges! Here are some common usage examples:
+
+<Tabs>
+  <Tab title="Remove by Badge ID">
+    Remove a specific badge by its ID:
+
+    ```bash
+    dbr --env-file .env --badge 123456789
+    ```
+
+    You can also use the short form:
+
+    ```bash
+    dbr -e .env -b 123456789
+    ```
+  </Tab>
+
+  <Tab title="Remove by Place ID">
+    Remove all badges from a specific game/place:
+
+    ```bash
+    dbr --env-file .env --place 987654321
+    ```
+
+    Short form:
+
+    ```bash
+    dbr -e .env -p 987654321
+    ```
+  </Tab>
+
+  <Tab title="Remove by User ID">
+    Remove all badges created by a specific user:
+
+    ```bash
+    dbr --env-file .env --user 123456
+    ```
+
+    Short form:
+
+    ```bash
+    dbr -e .env -u 123456
+    ```
+  </Tab>
+
+  <Tab title="Remove by Group ID">
+    Remove all badges from games in a specific group:
+
+    ```bash
+    dbr --env-file .env --group 456789
+    ```
+
+    Short form:
+
+    ```bash
+    dbr -e .env -g 456789
+    ```
+  </Tab>
+
+  <Tab title="Remove from File">
+    Remove badges from multiple places using a text file:
+
+    ```bash
+    dbr --env-file .env --file badges_to_remove.txt
+    ```
+
+    The file should contain Roblox URLs in the format:
+    ```
+    https://roblox.com/[TYPE]/[ID]
+    ```
+  </Tab>
+</Tabs>
+
+## Step 5: Download Spam Badge Lists (Optional)
+
+DBR can download curated lists of spam badges to help you identify and remove them:
+
+<Tabs>
+  <Tab title="Badge Spam Lists">
+    Download badge chain lists from the community repository:
+
+    ```bash
+    dbr --download-badge-spam-lists
+    ```
+
+    This downloads text files from [exurd/badge-spam-lists](https://github.com/exurd/badge-spam-lists) containing place IDs from various Roblox badge chains.
+  </Tab>
+
+  <Tab title="MetaGamerScore Invalid List">
+    Download MetaGamerScore's list of problematic games:
+
+    ```bash
+    dbr --download-mgs-invalid-list
+    ```
+
+    <Warning>
+      This list may contain false positives. Review the games before removing badges from them.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Step 6: Scan Your Inventory (Optional)
+
+Before removing badges, you can scan your inventory to see what spam badges you have:
+
+```bash
+dbr --check-inventory YOUR_USER_ID
+```
+
+This will:
+- Scan your badge inventory for spam badges
+- Create two text files: one for places and one for badges
+- **NOT delete any badges** (scan only)
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Make sure you've downloaded spam lists first using the commands in Step 5, as the scanner uses these lists to identify spam badges.
 </Note>
+
+<Warning>
+  Always review the scan results before using them to remove badges, especially if you downloaded the MGS list.
+</Warning>
+
+## Complete Example
+
+Here's a complete workflow from start to finish:
+
+<Steps>
+  <Step title="Install DBR">
+    ```bash
+    pipx install git+https://github.com/exurd/dbr
+    ```
+  </Step>
+
+  <Step title="Create .env file">
+    ```bash
+    echo 'RBX_TOKEN="YOUR_ROBLOSECURITY_TOKEN"' > .env
+    echo 'USER_AGENT=""' >> .env
+    ```
+  </Step>
+
+  <Step title="Download spam lists">
+    ```bash
+    dbr --download-badge-spam-lists
+    ```
+  </Step>
+
+  <Step title="Scan your inventory">
+    ```bash
+    dbr --check-inventory 123456789
+    ```
+    
+    Replace `123456789` with your Roblox user ID.
+  </Step>
+
+  <Step title="Remove spam badges">
+    ```bash
+    dbr --env-file .env --file dbr_cache/places_found.txt
+    ```
+
+    This removes all badges from the places identified in your scan.
+  </Step>
+</Steps>
+
+## Advanced Options
+
+DBR provides several advanced options for power users:
+
+### Concurrent Deletion Threads
+
+Speed up badge deletion by increasing the number of concurrent threads:
+
+```bash
+dbr -e .env --delete-threads 5 -p 123456789
+```
+
+### Custom Cache Directory
+
+Specify a custom directory for cache data:
+
+```bash
+dbr -e .env --cache-directory /path/to/cache -p 123456789
+```
+
+### Use Badgers of Robloxia Database
+
+Use the Badgers of Robloxia database to find disabled badges:
+
+```bash
+dbr -e .env --use-bor-badge-database -p 123456789
+```
+
+<Note>
+  Requests to the BOR API can take a long time. It's recommended to use the inventory scanner instead for finding hidden badges.
+</Note>
+
+## Next Steps
+
+- Learn about [batch removal strategies](/guides/using-text-files) for cleaning up large badge inventories
+- Explore [advanced configuration options](/configuration/options) for customizing DBR
+- Read the [command reference](/commands/overview) for all available commands
+
+## Getting Help
+
+If you need help or encounter issues:
+
+- Run `dbr --help` to see all available commands
+- Check the [GitHub repository](https://github.com/exurd/DBR) for issues and updates
+- Review the [troubleshooting guide](/reference/troubleshooting) for common issues and solutions

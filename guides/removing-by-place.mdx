@@ -1,0 +1,156 @@
+---
+title: "Removing Badges by Place/Game"
+description: "Learn how to remove all badges from a specific Roblox game or place"
+---
+
+## Overview
+
+The place removal method allows you to remove all badges from a specific Roblox game. DBR will automatically find the game's universe, retrieve all badges associated with it, check which ones you own, and remove them from your inventory.
+
+<Note>
+This method works for both active and disabled badges. For disabled badges that don't appear in the Roblox API, consider using the `--use-bor-badge-database` flag.
+</Note>
+
+## How It Works
+
+When you specify a place ID, DBR performs the following steps:
+
+1. Converts the place ID to a universe ID using the Roblox API
+2. Retrieves all badges associated with that universe (paginated, 100 at a time)
+3. Checks which badges exist in your inventory
+4. Removes only the badges you actually own
+5. Processes pages until all badges have been checked
+
+<Steps>
+
+### Step 1: Find the Place ID
+
+Navigate to the game on Roblox and copy the place ID from the URL:
+
+```
+https://www.roblox.com/games/123456789/Game-Name
+                              ^^^^^^^^^
+                              Place ID
+```
+
+### Step 2: Run the Command
+
+Use the `--place` (or `-p`) flag with your place ID:
+
+```bash
+dbr --place 123456789 --rbx-token YOUR_TOKEN
+```
+
+Or using an environment file:
+
+```bash
+dbr -p 123456789 --env-file .env
+```
+
+### Step 3: Monitor the Process
+
+DBR will display progress information:
+
+```
+Getting universe from 123456789...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----|
+Deleting badge 2124567890 from account...
+Response Status Code: 200
+Badge 2124567890 was successfully removed.
+|----||1||----|
+All badges on the page have been removed.
+Searched all badges.
+```
+
+</Steps>
+
+## Example Output
+
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Getting universe from 606849621...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----|
+Deleting badge 2124819458 from account...
+Deleting 606849621...
+Response Status Code: 200
+Badge 2124819458 was successfully removed.
+|----||1||----|
+All badges on the page have been removed.
+Checking next page of badges...
+Checking badges on page 2...
+Searched all badges.
+```
+
+## Advanced Options
+
+### Using BoR Database API
+
+For games with disabled badges that don't appear in the standard Roblox API:
+
+```bash
+dbr --place 123456789 --use-bor-badge-database --env-file .env
+```
+
+<Warning>
+The Badgers of Robloxia (BoR) API can take a long time to process requests. Use this only when necessary for hidden/disabled badges.
+</Warning>
+
+### Adjusting Thread Count
+
+Speed up badge deletion by increasing concurrent threads:
+
+```bash
+dbr --place 123456789 --delete-threads 4 --env-file .env
+```
+
+Default is 2 threads. Higher values may trigger rate limits.
+
+## Tips & Best Practices
+
+<CardGroup cols={2}>
+<Card title="Check First" icon="magnifying-glass">
+Use the inventory scanner (`--check-inventory`) before removing to see what will be deleted.
+</Card>
+
+<Card title="Rate Limits" icon="clock">
+DBR includes automatic retry logic with exponential backoff to handle Roblox rate limits gracefully.
+</Card>
+
+<Card title="Progress Tracking" icon="list-check">
+Processed places are cached in `checked_places.json` to avoid duplicate processing.
+</Card>
+
+<Card title="Multiple Games" icon="layer-group">
+For multiple games from the same developer, use the [user removal method](/guides/removing-by-user) instead.
+</Card>
+</CardGroup>
+
+## Troubleshooting
+
+### "Error in uni_json"
+
+The place ID may be invalid or the game may be deleted. Verify the ID is correct.
+
+### "No data in universebadges_json"
+
+The game has no badges or they're all disabled. Try using `--use-bor-badge-database`.
+
+### "Badge is invalid or does not exist"
+
+The badge was likely already deleted or disabled. This is informational and not an error.
+
+## Related Methods
+
+- [Remove by User](/guides/removing-by-user) - Remove badges from all games by a specific developer
+- [Remove by Group](/guides/removing-by-group) - Remove badges from all games in a group
+- [Using Text Files](/guides/using-text-files) - Batch remove from multiple games at once
+
+## Source Code Reference
+
+The place removal logic is implemented in `delete_from_game()` at [remover.py:256](https://github.com/exurd/dbr/blob/main/src/dbr/modules/remover.py#L256).

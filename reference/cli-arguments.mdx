@@ -1,0 +1,212 @@
+---
+title: CLI Arguments
+description: Complete reference of all command-line arguments for DBR
+---
+
+DBR provides 16 command-line arguments to control its behavior. All arguments are optional unless specified otherwise.
+
+## Authentication
+
+<ParamField path="--rbx-token" type="string" required>
+  Your `.ROBLOSECURITY` token for Roblox authentication. Required to delete badges.
+  
+  **WARNING:** Never share your token with anyone. It provides full access to your Roblox account.
+  
+  Learn more about obtaining your token: [ro.py documentation](https://ro.py.jmk.gg/dev/tutorials/roblosecurity/)
+  
+  **Aliases:** `-t`
+</ParamField>
+
+<ParamField path="--env-file" type="string">
+  Path to a `.env` file containing configuration settings like `RBX_TOKEN` and `USER_AGENT`.
+  
+  Using an env file is safer than passing tokens directly via command line, as it prevents accidental token exposure in shell history.
+  
+  **Aliases:** `-e`
+  
+  **Default:** `None`
+</ParamField>
+
+## Input Sources
+
+<ParamField path="--badge" type="integer">
+  Specify a single badge ID to remove from your account.
+  
+  **Aliases:** `-b`
+  
+  **Example:** `dbr --badge 123456789`
+</ParamField>
+
+<ParamField path="--place" type="integer">
+  Specify a place ID. DBR will remove all badges from this place's universe.
+  
+  **Aliases:** `-p`
+  
+  **Example:** `dbr --place 987654321`
+</ParamField>
+
+<ParamField path="--user" type="integer">
+  Specify a user ID. DBR will scan all public games by this user and remove badges from them.
+  
+  **Aliases:** `-u`
+  
+  **Example:** `dbr --user 12345`
+</ParamField>
+
+<ParamField path="--group" type="integer">
+  Specify a group (community) ID. DBR will scan all public games in this group and remove badges from them.
+  
+  **Aliases:** `-g`, `--community`
+  
+  **Note:** Private games in the group will not be visible via the API.
+  
+  **Example:** `dbr --group 67890`
+</ParamField>
+
+<ParamField path="--mgs-id" type="integer">
+  Specify a MetaGamerScore game ID to remove badges from.
+  
+  **Example:** `dbr --mgs-id 54321`
+</ParamField>
+
+<ParamField path="--file" type="string">
+  Path to a text file containing Roblox URLs (one per line) in the format:
+  - `https://roblox.com/games/[PLACE_ID]`
+  - `https://roblox.com/badges/[BADGE_ID]`
+  - `https://roblox.com/users/[USER_ID]`
+  
+  Supports both `.txt` files and `.txt.zst` compressed files.
+  
+  **Example:** `dbr --file spam_badges.txt`
+</ParamField>
+
+## Download Operations
+
+<ParamField path="--download-mgs-invalid-list" type="boolean">
+  Downloads MetaGamerScore's list of Roblox games detected as problematic.
+  
+  **Warning:** May contain false positives. Review the list before using it to remove badges.
+  
+  This is a standalone operation - the program will exit after downloading.
+  
+  **Default:** `false`
+</ParamField>
+
+<ParamField path="--download-badge-spam-lists" type="boolean">
+  Downloads text files from [exurd/badge-spam-lists](https://github.com/exurd/badge-spam-lists) containing place IDs from various badge chains.
+  
+  This is a standalone operation - the program will exit after downloading.
+  
+  **Default:** `false`
+</ParamField>
+
+## Inventory Scanning
+
+<ParamField path="--check-inventory" type="integer">
+  Scans a user's inventory for spam badges without deleting anything.
+  
+  Requires downloaded spam lists (use `--download-mgs-invalid-list` or `--download-badge-spam-lists` first).
+  
+  Creates two output files:
+  - List of places with spam badges
+  - List of badge IDs found
+  
+  **Aliases:** `-c`
+  
+  **Example:** `dbr --check-inventory 12345`
+</ParamField>
+
+## Advanced Options
+
+<ParamField path="--use-bor-badge-database" type="boolean">
+  Use the Badgers of Robloxia's Valuable Badge Database API instead of the Roblox API.
+  
+  Useful for detecting disabled badges that are hidden in the standard Roblox API.
+  
+  **Warning:** Requests can take significantly longer to complete.
+  
+  **Recommendation:** Use `--check-inventory` instead to find hidden badges.
+  
+  **Default:** `false`
+</ParamField>
+
+<ParamField path="--cache-directory" type="string">
+  Directory where DBR stores cache data, including checked places and downloaded lists.
+  
+  **Aliases:** `-cd`
+  
+  **Default:** `./dbr_cache` (or executable directory for compiled versions)
+</ParamField>
+
+<ParamField path="--delete-threads" type="integer">
+  Number of concurrent threads to use when deleting multiple badges.
+  
+  Higher values can speed up deletion but may increase rate limiting risk.
+  
+  **Default:** `2`
+  
+  **Example:** `dbr --delete-threads 4`
+</ParamField>
+
+<ParamField path="--user-agent" type="string">
+  Custom user agent string for HTTP requests.
+  
+  **Aliases:** `-ua`
+  
+  **Default:** `DBR/{version}`
+</ParamField>
+
+## Utility Arguments
+
+<ParamField path="--version" type="boolean">
+  Display the version number and exit.
+  
+  **Example:** `dbr --version`
+</ParamField>
+
+<ParamField path="--help" type="boolean">
+  Show help message with all available arguments and exit.
+  
+  **Aliases:** `-h`
+  
+  **Example:** `dbr --help`
+</ParamField>
+
+## Usage Requirements
+
+<Note>
+  DBR requires at least one authentication method (`--rbx-token` or `--env-file`) AND one input source (`--file`, `--badge`, `--place`, `--user`, `--group`, or `--mgs-id`) to perform deletion operations.
+  
+  The download and inventory scanning operations can run without authentication.
+</Note>
+
+## Examples
+
+### Remove a single badge
+```bash
+dbr --rbx-token YOUR_TOKEN --badge 123456789
+```
+
+### Remove badges from a place using env file
+```bash
+dbr --env-file .env --place 987654321
+```
+
+### Remove badges from multiple sources
+```bash
+dbr -e .env --user 12345 --group 67890
+```
+
+### Download lists and scan inventory
+```bash
+# First, download spam lists
+dbr --download-badge-spam-lists
+
+# Then scan an inventory
+dbr --check-inventory 12345
+```
+
+### Use a file with custom settings
+```bash
+dbr -e .env --file spam_list.txt --delete-threads 3
+```

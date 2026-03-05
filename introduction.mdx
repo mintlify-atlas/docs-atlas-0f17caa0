@@ -1,0 +1,108 @@
+---
+title: Introduction
+description: Batch remove unwanted Roblox badges and scan inventories for spam badges
+---
+
+<div style={{
+  background: 'linear-gradient(135deg, #8b9baa 0%, #bac4cd 100%)',
+  padding: '4rem 2rem',
+  borderRadius: '12px',
+  marginBottom: '2rem',
+  textAlign: 'center'
+}}>
+  <h1 style={{
+    fontSize: '40px',
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: '1rem',
+    fontFamily: 'Arial, sans-serif'
+  }}>
+    Dumb Badge(s) Remover
+  </h1>
+  <p style={{
+    fontSize: '18px',
+    color: '#ffffff',
+    maxWidth: '600px',
+    margin: '0 auto',
+    fontFamily: 'Arial, sans-serif'
+  }}>
+    A powerful Python CLI tool that batch removes unwanted Roblox badges and scans inventories for spam badges
+  </p>
+</div>
+
+## What is DBR?
+
+Dumb Badge(s) Remover (DBR) is a Python command-line tool designed to help Roblox players clean up their badge inventory. If you've been invalidated by [MetaGamerScore](https://metagamerscore.com/) due to spam badges, or simply want to declutter your badge collection, DBR provides fast and efficient batch removal capabilities.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Batch Removal" icon="trash" href="/commands/remove-badges">
+    Remove badges in bulk with multi-threaded deletion for maximum speed
+  </Card>
+  <Card title="Inventory Scanning" icon="magnifying-glass" href="/commands/scan-inventory">
+    Scan any public inventory to detect spam badges before removal
+  </Card>
+  <Card title="Multiple Methods" icon="list" href="/commands/overview">
+    Remove badges by badge ID, place ID, user ID, group ID, or text file
+  </Card>
+  <Card title="MetaGamerScore Integration" icon="link" href="/guides/metagamerscore-integration">
+    Download and use MGS invalid game lists for automated cleanup
+  </Card>
+</CardGroup>
+
+## Why Use DBR?
+
+<Note>
+DBR is particularly useful if you've been invalidated by MetaGamerScore's scanner. You can download their list of invalid games and batch remove all associated badges from your account.
+</Note>
+
+- **Fast**: Multi-threaded badge deletion processes multiple badges concurrently
+- **Safe**: Token management via environment files prevents accidental exposure
+- **Flexible**: Multiple removal methods to suit different cleanup scenarios
+- **Thorough**: Support for Badgers of Robloxia database to find disabled/hidden badges
+
+## Quick Example
+
+Remove all badges from a specific Roblox game:
+
+```bash
+dbr --place 123456789 --env-file .env
+```
+
+Scan an inventory for spam badges without deleting anything:
+
+```bash
+dbr --check-inventory 123456789
+```
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install DBR via pip, pipx, or uv
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running in minutes
+  </Card>
+  <Card title="Authentication" icon="key" href="/configuration/authentication">
+    Set up your ROBLOSECURITY token safely
+  </Card>
+  <Card title="Commands" icon="terminal" href="/commands/overview">
+    Explore all available commands
+  </Card>
+</CardGroup>
+
+<Warning>
+**Security Notice**: Never share your ROBLOSECURITY token with anyone. Anyone with access to your token can control your Roblox account, steal Robux, and cause permanent damage. Always use environment files to keep your token secure.
+</Warning>
+
+## Requirements
+
+- Python 3.11 or higher
+- A Roblox account with badges to remove
+- ROBLOSECURITY token for authentication
+
+## Open Source
+
+DBR is open source and licensed under the MIT License. Contributions are welcome on [GitHub](https://github.com/exurd/DBR).

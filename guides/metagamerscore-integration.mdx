@@ -1,0 +1,407 @@
+---
+title: "MetaGamerScore Integration"
+description: "Learn how to use MetaGamerScore's invalid game lists to clean up your badge inventory"
+---
+
+## Overview
+
+[MetaGamerScore (MGS)](https://metagamerscore.com/) is a service that tracks and validates Roblox game achievements. DBR integrates with MGS to help you remove badges from games that have been flagged as problematic or invalid.
+
+<Warning>
+MGS lists may contain false positives. Always review the downloaded list before processing to avoid removing legitimate badges.
+</Warning>
+
+## What is MetaGamerScore?
+
+MetaGamerScore provides:
+- **Game Validation**: Identifies problematic Roblox games
+- **Achievement Tracking**: Monitors legitimate achievement-based games
+- **Invalid Game Lists**: Maintains lists of games detected as spam or badge chains
+- **Player Invalidation**: Flags players who have collected too many invalid badges
+
+DBR can download and process MGS's invalid game list automatically.
+
+## Understanding Invalid Games
+
+Games may be flagged as invalid by MGS for various reasons:
+
+| Category | Examples |
+|----------|----------|
+| **Badge Chains** | Games requiring 100+ badges in sequence |
+| **Auto-Badge Games** | Games that award badges instantly without gameplay |
+| **Spam Games** | Games created solely for badge farming |
+| **Glitched Games** | Games exploiting badge award mechanics |
+
+<Note>
+Some games flagged as invalid may still be legitimate. Use your judgment when processing MGS lists.
+</Note>
+
+## Downloading MGS Lists
+
+<Steps>
+
+### Step 1: Download the Invalid Games List
+
+Run the download command:
+
+```bash
+dbr --download-mgs-invalid-list
+```
+
+### Step 2: Review the Downloaded Files
+
+Two files are created:
+
+**`mgs_invalid_games.json`** - Complete JSON data:
+```json
+{
+  "invalid_games": [
+    606849621,
+    789456123,
+    456789012
+  ],
+  "updated": "2025-03-05T12:00:00Z",
+  "total": 1234
+}
+```
+
+**`mgs_invalid_games.txt`** - Ready-to-use text file:
+```text
+https://www.roblox.com/games/606849621
+https://www.roblox.com/games/789456123
+https://www.roblox.com/games/456789012
+```
+
+### Step 3: Review Before Processing
+
+<Warning>
+**IMPORTANT**: Always review the list before processing!
+</Warning>
+
+Check how many games are in the list:
+
+```bash
+wc -l mgs_invalid_games.txt
+```
+
+Preview the first few games:
+
+```bash
+head -n 10 mgs_invalid_games.txt
+```
+
+### Step 4: Process the List
+
+Once reviewed, process the list:
+
+```bash
+dbr --file mgs_invalid_games.txt --env-file .env
+```
+
+</Steps>
+
+## Example Output
+
+### Download Process
+
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Downloading MetaGamerScore invalid Roblox games list...
+Success!
+```
+
+### Processing the List
+
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Getting universe from 606849621...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----|
+Deleting badge 2124819458 from account...
+Response Status Code: 200
+Badge 2124819458 was successfully removed.
+|----||1||----|
+Searched all badges.
+
+Getting universe from 789456123...
+[... continues for each game ...]
+```
+
+## Using MGS ID Directly
+
+DBR can also fetch specific games by their MGS ID:
+
+<Steps>
+
+### Find the MGS Game ID
+
+Visit MetaGamerScore and find a game's MGS ID from the URL:
+
+```
+https://metagamerscore.com/game/12345
+                                ^^^^^
+                                MGS ID
+```
+
+### Use the --mgs-id Flag
+
+```bash
+dbr --mgs-id 12345 --env-file .env
+```
+
+### What Happens
+
+1. DBR fetches the game page from MGS
+2. Extracts the Roblox place ID from the HTML
+3. Processes badge removal for that game
+
+</Steps>
+
+<Note>
+This method is useful for checking specific games flagged by MGS without downloading the entire list.
+</Note>
+
+## MGS Scanner and Invalidation
+
+### Why You Might Be Invalidated
+
+MetaGamerScore may invalidate your account if:
+- You have collected too many badges from invalid games
+- Your badge-to-game ratio is suspiciously high
+- You have badges from known spam badge chains
+
+### Checking Your Status
+
+Visit your MGS profile:
+```
+https://metagamerscore.com/user/YOUR_ROBLOX_USERNAME
+```
+
+Look for invalidation warnings or flags.
+
+### Becoming Valid Again
+
+<Steps>
+
+### Download MGS Invalid List
+
+```bash
+dbr --download-mgs-invalid-list
+```
+
+### Review the List
+
+Identify which games are causing invalidation:
+
+```bash
+cat mgs_invalid_games.txt | wc -l
+```
+
+### Process the List
+
+```bash
+dbr --file mgs_invalid_games.txt --env-file .env
+```
+
+### Wait for Re-scan
+
+MGS periodically rescans player inventories. Your status should update within 24-48 hours.
+
+</Steps>
+
+## Advanced Integration
+
+### Combining MGS with Inventory Scanner
+
+Use DBR's inventory scanner to see which MGS-flagged badges you actually have:
+
+```bash
+# First, download MGS list
+dbr --download-mgs-invalid-list
+
+# Then scan your inventory (doesn't remove anything)
+dbr --check-inventory YOUR_USER_ID
+```
+
+This creates `found_places.txt` and `found_badges.txt` showing only what you own.
+
+### Custom Filtering
+
+Filter MGS list to only include specific patterns:
+
+```bash
+# Extract only games from a specific ID range
+grep "games/606" mgs_invalid_games.txt > filtered_mgs.txt
+dbr --file filtered_mgs.txt --env-file .env
+```
+
+### Periodic Updates
+
+Create a script to regularly update and process MGS lists:
+
+```bash
+#!/bin/bash
+# update_mgs.sh
+
+# Download latest list
+dbr --download-mgs-invalid-list
+
+# Backup old list
+mv mgs_invalid_games.txt mgs_invalid_games_old.txt 2>/dev/null
+
+# Download new list
+dbr --download-mgs-invalid-list
+
+# Show differences
+echo "New invalid games:"
+comm -13 mgs_invalid_games_old.txt mgs_invalid_games.txt
+
+# Process new entries only
+comm -13 mgs_invalid_games_old.txt mgs_invalid_games.txt > mgs_new_only.txt
+dbr --file mgs_new_only.txt --env-file .env
+```
+
+## Tips & Best Practices
+
+<CardGroup cols={2}>
+<Card title="Review First" icon="magnifying-glass">
+Always review the MGS list before processing. Some flagged games may be legitimate.
+</Card>
+
+<Card title="Regular Updates" icon="rotate">
+MGS updates their list regularly. Download periodically to catch new invalid games.
+</Card>
+
+<Card title="Backup Lists" icon="floppy-disk">
+Keep copies of downloaded lists to track what was removed and when.
+</Card>
+
+<Card title="Combine Methods" icon="layer-group">
+Use MGS lists alongside custom lists and inventory scanner for comprehensive cleanup.
+</Card>
+</CardGroup>
+
+## Understanding False Positives
+
+Some games may be flagged incorrectly:
+
+### Common False Positives
+
+| Type | Why Flagged | What To Do |
+|------|-------------|------------|
+| **Event Games** | Temporary badge events with many badges | Review manually, may be legitimate |
+| **Educational Games** | Learning games with achievement systems | Check if badges have value to you |
+| **Challenge Games** | Difficult games with many milestones | Verify badge legitimacy before removing |
+
+### Manual Review Process
+
+1. **Check Game Legitimacy**:
+   - Visit the game on Roblox
+   - Check player count and ratings
+   - Review badge descriptions
+
+2. **Filter Out False Positives**:
+   ```bash
+   # Create a whitelist of games to keep
+   cat > whitelist.txt << EOF
+   606849621
+   789456123
+   EOF
+   
+   # Remove whitelisted games from MGS list
+   grep -v -f whitelist.txt mgs_invalid_games.txt > filtered_mgs.txt
+   ```
+
+3. **Process Filtered List**:
+   ```bash
+   dbr --file filtered_mgs.txt --env-file .env
+   ```
+
+## Troubleshooting
+
+### "Failed to download list"
+
+**Cause**: MGS API is down or network connection issues.
+
+**Solution**: Wait a few minutes and try again. Check [metagamerscore.com](https://metagamerscore.com/) is accessible.
+
+### Downloaded List is Empty
+
+**Cause**: MGS API returned no data or response format changed.
+
+**Solution**: Check the JSON file to see if data structure changed. Report issue if persistent.
+
+### List Has Unexpected Format
+
+**Cause**: MGS API response format may have been updated.
+
+**Solution**: Check the JSON file structure. You may need to update DBR to the latest version.
+
+### Processing Takes Too Long
+
+**Cause**: MGS lists can contain thousands of games.
+
+**Solution**:
+- Use `--delete-threads 4` to increase parallelism
+- Process in batches by splitting the file
+- Let it run overnight for very large lists
+
+## MGS API Reference
+
+### Invalid Games Endpoint
+
+```
+GET https://metagamerscore.com/api/roblox/invalid_games
+```
+
+**Response Format**:
+```json
+{
+  "invalid_games": [606849621, 789456123, ...],
+  "updated": "2025-03-05T12:00:00Z",
+  "total": 1234
+}
+```
+
+### Game Page Format
+
+```
+GET https://metagamerscore.com/game/{mgs_id}
+```
+
+**HTML Contains**:
+```html
+<a target="_blank" href="https://www.roblox.com/games/606849621">...</a>
+```
+
+DBR extracts the Roblox place ID from this HTML.
+
+## Related Methods
+
+- [Using Text Files](/guides/using-text-files) - Process downloaded MGS lists
+- [Remove by Place](/guides/removing-by-place) - Remove badges from specific flagged games
+- [Remove by User](/guides/removing-by-user) - Remove badges from spam developers
+
+## External Resources
+
+- [MetaGamerScore Website](https://metagamerscore.com/)
+- [MGS Discord](https://discord.gg/metagamerscore) - Get help with invalidation issues
+- [MGS Documentation](https://metagamerscore.com/docs) - Learn about their validation system
+
+## Source Code Reference
+
+MGS integration is implemented in [metagamerscore.py](https://github.com/exurd/dbr/blob/main/src/dbr/modules/metagamerscore.py):
+
+- `download_mgs_invalid_games()` at line 11
+- `get_game_from_mgs_id()` at line 44
+
+HTML parsing pattern at [metagamerscore.py:8](https://github.com/exurd/dbr/blob/main/src/dbr/modules/metagamerscore.py#L8):
+
+```python
+mgs_place_html_pattern = re.compile(r"<a target=\"_blank\" href=\"https://www\.roblox\.com/games/([0-9]+)\">")
+```

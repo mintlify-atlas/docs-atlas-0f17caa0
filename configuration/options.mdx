@@ -1,0 +1,266 @@
+---
+title: Configuration Options
+description: All configuration options available in DBR
+---
+
+## Overview
+
+DBR provides several configuration options to customize its behavior. These options can be set via:
+- Command-line arguments
+- [Environment files](/configuration/environment-files) (for `RBX_TOKEN` and `USER_AGENT`)
+
+This page documents the technical configuration options. For badge selection options (like `--place`, `--badge`, etc.), see the [Commands](/commands/overview) section.
+
+## Cache Directory
+
+Control where DBR stores cached data.
+
+### --cache-directory
+
+**Short flag:** `-cd`  
+**Type:** String (directory path)  
+**Default:** `./dbr_cache/` (in current directory)
+
+```bash
+dbr --cache-directory /path/to/cache --place 123456
+dbr -cd ~/.cache/dbr --place 123456
+```
+
+#### What is Cached?
+
+DBR caches:
+- Downloaded badge spam lists
+- MetaGamerScore invalid game lists
+- API response data to reduce redundant requests
+
+#### Custom Cache Locations
+
+You can specify any directory path:
+
+```bash
+# Absolute path
+dbr --cache-directory /tmp/dbr-cache --place 123456
+
+# Relative path
+dbr --cache-directory ./my-cache --place 123456
+
+# User home directory
+dbr --cache-directory ~/.dbr-cache --place 123456
+```
+
+<Info>
+  The cache directory will be created automatically if it doesn't exist.
+</Info>
+
+#### Why Change the Cache Directory?
+
+- **Shared cache:** Use a central location for multiple projects
+- **Temporary storage:** Use `/tmp` or similar for temporary caching
+- **Cloud storage:** Store cache in a synced folder (Dropbox, etc.)
+- **Disk space:** Move cache to a drive with more space
+
+<Tip>
+  If you use DBR on multiple projects, setting a shared cache directory can save bandwidth and speed up operations.
+</Tip>
+
+## Delete Threads
+
+Control how many concurrent threads DBR uses when deleting multiple badges.
+
+### --delete-threads
+
+**Type:** Integer  
+**Default:** `2`  
+**Range:** 1 or higher
+
+```bash
+dbr --delete-threads 5 --place 123456
+```
+
+#### How It Works
+
+When deleting multiple badges (e.g., all badges from a game), DBR can process deletions in parallel using multiple threads:
+
+- **1 thread:** Sequential deletion (slowest, but safest)
+- **2 threads:** Default balance between speed and safety
+- **5+ threads:** Faster deletion, but may trigger rate limits
+
+#### Choosing Thread Count
+
+```bash
+# Conservative (slow but safe)
+dbr --delete-threads 1 --file badge-list.txt
+
+# Default (balanced)
+dbr --delete-threads 2 --file badge-list.txt
+
+# Aggressive (faster, may hit rate limits)
+dbr --delete-threads 5 --file badge-list.txt
+```
+
+<Warning>
+  **Rate Limiting Considerations**
+  
+  Using too many threads may cause Roblox to rate limit your requests, resulting in:
+  - Failed deletion attempts
+  - Temporary API blocks
+  - Slower overall performance
+  
+  Start with the default (2 threads) and increase carefully if needed.
+</Warning>
+
+#### When to Increase Threads
+
+Consider increasing thread count when:
+- You have hundreds of badges to delete
+- You're not experiencing rate limiting issues
+- You want to speed up bulk deletion operations
+
+<Tip>
+  For large deletion jobs (500+ badges), start with 2 threads. If deletions are succeeding consistently, you can increase to 3-4 threads for better performance.
+</Tip>
+
+#### When to Decrease Threads
+
+Use a single thread (1) when:
+- You're experiencing rate limiting errors
+- You want maximum reliability
+- You're not in a hurry
+
+## User Agent
+
+Customize the User-Agent header for HTTP requests made by DBR.
+
+### --user-agent
+
+**Short flag:** `-ua`  
+**Type:** String  
+**Default:** `DBR/{version}` (e.g., `DBR/1.0.0`)  
+**Can also be set in:** [Environment files](/configuration/environment-files) as `USER_AGENT`
+
+```bash
+dbr --user-agent "MyCustomAgent/1.0" --place 123456
+dbr -ua "MyBot/2.0" --place 123456
+```
+
+#### What is a User Agent?
+
+The User-Agent is a string sent with every HTTP request that identifies the client making the request. Roblox's API can see this value.
+
+#### Why Change the User Agent?
+
+- **Custom identification:** Identify your requests in logs
+- **Testing:** Test different user agent behaviors
+- **Compliance:** Match specific user agent requirements
+
+<Info>
+  The default user agent (`DBR/{version}`) is perfectly fine for normal use. You only need to change this if you have specific requirements.
+</Info>
+
+#### Setting User Agent in Environment Files
+
+You can also set the user agent in your `.env` file:
+
+```bash .env
+USER_AGENT="MyCustomAgent/1.0"
+```
+
+Then use it:
+
+```bash
+dbr --env-file .env --place 123456
+```
+
+#### Priority
+
+If you set the user agent in both places, the command-line argument takes priority:
+
+```bash
+# USER_AGENT in .env is overridden
+dbr --env-file .env --user-agent "CommandLineAgent/1.0" --place 123456
+```
+
+## Configuration Examples
+
+### Basic Usage with Custom Cache
+
+```bash
+dbr --cache-directory ~/.cache/dbr \
+    --env-file .env \
+    --place 123456
+```
+
+### High-Performance Bulk Deletion
+
+```bash
+dbr --env-file .env \
+    --delete-threads 4 \
+    --cache-directory /tmp/dbr-cache \
+    --file badge-spam-list.txt
+```
+
+### Conservative Safe Mode
+
+```bash
+dbr --env-file .env \
+    --delete-threads 1 \
+    --place 123456
+```
+
+### Custom User Agent with Multiple Options
+
+```bash
+dbr --env-file .env \
+    --user-agent "MyBadgeManager/1.0" \
+    --cache-directory ~/dbr-data \
+    --delete-threads 3 \
+    --place 123456
+```
+
+## Combining with Other Options
+
+These configuration options can be combined with any [badge removal commands](/commands/remove-badges):
+
+```bash
+# Delete badges from a user with custom config
+dbr --env-file .env \
+    --cache-directory ~/.cache/dbr \
+    --delete-threads 3 \
+    --user 123456
+
+# Delete specific badge with custom settings
+dbr --env-file .env \
+    --user-agent "CustomAgent/1.0" \
+    --badge 123456789
+
+# Scan inventory with custom cache
+dbr --cache-directory /tmp/cache \
+    --check-inventory 123456
+```
+
+## Configuration Checklist
+
+For optimal DBR configuration:
+
+<Check>
+  - [ ] Store your ROBLOSECURITY token in an `.env` file (not on command line)
+  - [ ] Use default thread count (2) unless you have a specific need to change it
+  - [ ] Set a custom cache directory if you want persistent caching across projects
+  - [ ] Only change user agent if you have a specific requirement
+  - [ ] Test with small operations before running large batch deletions
+</Check>
+
+## Environment Variables vs Command Line
+
+Quick reference for what can be configured where:
+
+| Option | Command Line | Environment File |
+|--------|--------------|------------------|
+| ROBLOSECURITY token | `--rbx-token` | `RBX_TOKEN` |
+| User Agent | `--user-agent` | `USER_AGENT` |
+| Cache Directory | `--cache-directory` | ❌ (command line only) |
+| Delete Threads | `--delete-threads` | ❌ (command line only) |
+
+<Tip>
+  Use environment files for sensitive data (tokens) and command-line arguments for operational settings (threads, cache).
+</Tip>

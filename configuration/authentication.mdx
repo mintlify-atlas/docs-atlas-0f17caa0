@@ -1,0 +1,107 @@
+---
+title: Authentication
+description: How to authenticate with your ROBLOSECURITY token to use DBR
+---
+
+## What is the ROBLOSECURITY Token?
+
+The ROBLOSECURITY token (also called `.ROBLOSECURITY`) is a cookie that authenticates your Roblox account. DBR needs this token to delete badges from your account on your behalf.
+
+<Warning>
+  **CRITICAL SECURITY WARNING**
+  
+  Your ROBLOSECURITY token is like your password. Anyone with this token has **full access** to your account.
+  
+  - **DO NOT SHARE IT WITH ANYONE** (not even friends)
+  - **DO NOT POST IT ONLINE** (Discord, GitHub, forums, etc.)
+  - **DO NOT SEND IT TO OTHERS**
+  
+  If someone gets your token, they can:
+  - Steal all your Robux
+  - Upload bannable content to your account
+  - Delete your account permanently
+  - Access all your account data
+  
+  **If you accidentally leak your token, LOG OUT OF ROBLOX IMMEDIATELY** to invalidate it.
+</Warning>
+
+## How to Get Your Token
+
+DBR does not automatically grab your token. You must export it manually from your browser.
+
+<Steps>
+  <Step title="Follow ro.py's Guide">
+    The safest way to get your token is to follow the official [ro.py tutorial on ROBLOSECURITY tokens](https://ro.py.jmk.gg/dev/tutorials/roblosecurity/).
+    
+    This guide provides step-by-step instructions for extracting your token from your browser's cookies.
+  </Step>
+  
+  <Step title="Copy Your Token">
+    Your token will look like a long string starting with `_|WARNING:-DO-NOT-SHARE-THIS.--`
+    
+    Copy the entire token value, including the prefix.
+  </Step>
+  
+  <Step title="Keep It Secure">
+    Store your token securely. We recommend using an [environment file](/configuration/environment-files) instead of passing it directly on the command line.
+  </Step>
+</Steps>
+
+<Warning>
+  Be very careful with scripts that claim to "automatically" find your token. A single backdoor in such a script can lead to your account being stolen.
+</Warning>
+
+## Using Your Token
+
+There are two ways to provide your token to DBR:
+
+### Method 1: Command Line Argument (Not Recommended)
+
+You can pass your token directly using the `--rbx-token` flag:
+
+```bash
+dbr --rbx-token "_|WARNING:-DO-NOT-SHARE-THIS.--Your-Token-Here" --place 123456
+```
+
+<Warning>
+  This method is **not recommended** because:
+  - Your token may be visible in your command history
+  - It could be visible to other users on shared systems
+  - You might accidentally share it when copying terminal output
+</Warning>
+
+### Method 2: Environment File (Recommended)
+
+The safer method is to use an `.env` file. See [Environment Files](/configuration/environment-files) for detailed instructions.
+
+```bash
+dbr --env-file .env --place 123456
+```
+
+## Token Safety Checklist
+
+Before using DBR, make sure:
+
+<Check>
+  - [ ] You obtained your token from your own browser (not from a script)
+  - [ ] You're using your own token (not someone else's)
+  - [ ] You haven't shared your token with anyone
+  - [ ] You're storing it securely (preferably in an `.env` file)
+  - [ ] Your `.env` file is in your `.gitignore` if using version control
+</Check>
+
+## What DBR Does With Your Token
+
+DBR uses your token to:
+1. Authenticate API requests to Roblox
+2. Verify you own the badges being deleted
+3. Send deletion requests to Roblox's badge API
+
+DBR **does not**:
+- Send your token to any third-party services
+- Store your token anywhere except in memory during execution
+- Share your token with anyone
+
+<Info>
+  DBR is [open source](https://github.com/exurd/dbr). You can review the code to verify how your token is used.
+</Info>

@@ -1,0 +1,219 @@
+---
+title: "Removing Badges by User"
+description: "Learn how to remove all badges from games created by a specific Roblox user"
+---
+
+## Overview
+
+The user removal method allows you to remove badges from all games created by a specific Roblox user. This is useful when a developer has created multiple badge spam games, and you want to clean your inventory from all of them at once.
+
+<Note>
+This method only processes publicly visible games. Private games owned by the user will not be included.
+</Note>
+
+## How It Works
+
+When you specify a user ID, DBR performs the following steps:
+
+1. Fetches all public games created by the user (paginated, 50 at a time)
+2. For each game, extracts the root place ID
+3. Checks if the place has already been processed (using cache)
+4. Runs the place removal process for each unique game
+5. Continues to the next page until all games are processed
+
+<Steps>
+
+### Step 1: Find the User ID
+
+Navigate to the user's profile on Roblox and copy their user ID from the URL:
+
+```
+https://www.roblox.com/users/123456/Username
+                             ^^^^^^
+                             User ID
+```
+
+### Step 2: Run the Command
+
+Use the `--user` (or `-u`) flag with the user ID:
+
+```bash
+dbr --user 123456 --rbx-token YOUR_TOKEN
+```
+
+Or using an environment file:
+
+```bash
+dbr -u 123456 --env-file .env
+```
+
+### Step 3: Monitor the Process
+
+DBR will display progress as it processes each game:
+
+```
+Finding user 123456...
+Searching player's games...
+Checking place 1...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 606849621...
+Searching universe's badges...
+Checking badges on page 1...
+[... badge removal process ...]
+--------------
+^^^^^^^^^^^^^^
+Checking next page of games...
+```
+
+</Steps>
+
+## Example Output
+
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Finding user 5201234...
+Searching player's games...
+Checking place 1...
+⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄⌄
+--------------
+Getting universe from 606849621...
+Searching universe's badges...
+Checking badges on page 1...
+|----||1||----|
+Deleting badge 2124819458 from account...
+Deleting 606849621...
+Response Status Code: 200
+Badge 2124819458 was successfully removed.
+|----||1||----|
+All badges on the page have been removed.
+Searched all badges.
+--------------
+^^^^^^^^^^^^^^
+Checking place 2...
+Already checked place, skipping...
+Searched all games.
+```
+
+## Cache Management
+
+### Checked Places Cache
+
+DBR maintains a cache of processed places in `checked_places.json` to avoid reprocessing:
+
+```json
+[606849621, 789456123, 987654321]
+```
+
+This cache is shared across all removal methods and persists between runs.
+
+### Resetting the Cache
+
+If you need to reprocess games, delete or edit the cache file:
+
+```bash
+rm dbr_cache/checked_places.json
+```
+
+<Warning>
+Clearing the cache will cause DBR to reprocess all games, which may take significantly longer.
+</Warning>
+
+## Advanced Options
+
+### Custom Cache Directory
+
+Specify a different cache directory:
+
+```bash
+dbr --user 123456 --cache-directory ./my_cache --env-file .env
+```
+
+### Combining with Other Options
+
+Use BoR database for disabled badges:
+
+```bash
+dbr --user 123456 --use-bor-badge-database --env-file .env
+```
+
+Adjust thread count for faster processing:
+
+```bash
+dbr --user 123456 --delete-threads 4 --env-file .env
+```
+
+## Tips & Best Practices
+
+<CardGroup cols={2}>
+<Card title="Large Catalogs" icon="hourglass">
+Users with many games can take a long time to process. Be patient and let DBR work through all pages.
+</Card>
+
+<Card title="API Limits" icon="shield-halved">
+Roblox API only returns up to 50 games per page. DBR automatically handles pagination.
+</Card>
+
+<Card title="Skip Duplicates" icon="forward">
+The cache prevents reprocessing the same place multiple times, even if it appears in multiple contexts.
+</Card>
+
+<Card title="Batch Operations" icon="layer-group">
+For multiple users, consider using a [text file](/guides/using-text-files) with user URLs instead.
+</Card>
+</CardGroup>
+
+## Use Cases
+
+### Badge Chain Creators
+
+Many badge chains are created by a single user. Removing by user eliminates all badges from their entire portfolio:
+
+```bash
+dbr --user 5201234 --env-file .env
+```
+
+### Spam Game Developers
+
+Developers who create multiple low-quality badge games can be cleaned up in one command:
+
+```bash
+dbr --user 987654 --env-file .env
+```
+
+### After Using MGS Scanner
+
+If MetaGamerScore flags a specific developer, use this method to clean up all their content:
+
+```bash
+dbr --user 123456 --env-file .env
+```
+
+## Troubleshooting
+
+### "Error in game_json"
+
+The user ID may be invalid or the user may have no public games. Verify the ID is correct.
+
+### "Already checked place, skipping..."
+
+This is normal behavior. DBR is skipping a place that was already processed. This saves time and API requests.
+
+### Process Takes Too Long
+
+Users with hundreds of games will take time. Consider:
+- Running overnight for very large catalogs
+- Using `--delete-threads` to increase parallelism
+- Checking the cache periodically to see progress
+
+## Related Methods
+
+- [Remove by Place](/guides/removing-by-place) - Remove badges from a single specific game
+- [Remove by Group](/guides/removing-by-group) - Remove badges from group-owned games
+- [Using Text Files](/guides/using-text-files) - Batch process multiple users from a list
+
+## Source Code Reference
+
+The user removal logic is implemented in `delete_from_player()` at [remover.py:330](https://github.com/exurd/dbr/blob/main/src/dbr/modules/remover.py#L330).

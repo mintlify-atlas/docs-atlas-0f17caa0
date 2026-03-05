@@ -1,0 +1,465 @@
+---
+title: Download Spam Lists
+description: Download curated lists of spam badges and problematic games
+---
+
+DBR can download spam detection lists from external sources to help identify problematic badges. These lists are essential for the [inventory scanner](/commands/scan-inventory) and can be used directly for badge removal.
+
+## Available Lists
+
+<CardGroup cols={2}>
+  <Card title="MetaGamerScore Invalid Games" icon="database" href="#metagamerscore-invalid-games">
+    Games detected as problematic by MGS
+  </Card>
+  <Card title="Badge Spam Lists" icon="list" href="#badge-spam-lists">
+    Community-maintained badge chain collections
+  </Card>
+</CardGroup>
+
+---
+
+## MetaGamerScore Invalid Games
+
+Download a list of Roblox games flagged as problematic by [MetaGamerScore](https://metagamerscore.com).
+
+<ParamField path="--download-mgs-invalid-list" type="flag">
+  Downloads MetaGamerScore's invalid games list
+</ParamField>
+
+### Usage
+
+```bash
+dbr --download-mgs-invalid-list
+```
+
+<Accordion title="Expected Output">
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Downloading MetaGamerScore invalid Roblox games list...
+Success!
+```
+</Accordion>
+
+### Downloaded Files
+
+<ResponseField name="mgs_invalid_games.json" type="json">
+  Complete JSON response from MGS API
+  
+  ```json
+  {
+    "invalid_games": [
+      "1818",
+      "534706382",
+      "9876543210"
+    ]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="mgs_invalid_games.txt" type="text">
+  Human-readable list of game URLs (one per line)
+  
+  ```text
+  https://www.roblox.com/games/1818
+  https://www.roblox.com/games/534706382
+  https://www.roblox.com/games/9876543210
+  ```
+  
+  **Can be used directly with `--file` for badge removal:**
+  ```bash
+  dbr --env-file .env --file mgs_invalid_games.txt
+  ```
+</ResponseField>
+
+### What Gets Flagged?
+
+MetaGamerScore flags games based on various criteria:
+
+<CardGroup cols={2}>
+  <Card title="Badge Spam" icon="badge">
+    Games with excessive badge counts designed to inflate scores
+  </Card>
+  
+  <Card title="Fake Games" icon="triangle-exclamation">
+    Games created solely for badge distribution
+  </Card>
+  
+  <Card title="Exploits" icon="bug">
+    Games with easily exploitable badge requirements
+  </Card>
+  
+  <Card title="Badge Chains" icon="link">
+    Series of related games pumping out spam badges
+  </Card>
+</CardGroup>
+
+<Warning>
+  **Use with caution!** This list may contain legitimate games that were incorrectly flagged. Always review before mass-deleting badges.
+</Warning>
+
+### API Source
+
+DBR fetches data from:
+```
+https://metagamerscore.com/api/roblox/invalid_games
+```
+
+This list is maintained by the MetaGamerScore team and updated regularly.
+
+---
+
+## Badge Spam Lists
+
+Download community-maintained lists of badge chains from the [exurd/badge-spam-lists](https://github.com/exurd/badge-spam-lists) repository.
+
+<ParamField path="--download-badge-spam-lists" type="flag">
+  Downloads badge spam lists from GitHub
+</ParamField>
+
+### Usage
+
+```bash
+dbr --download-badge-spam-lists
+```
+
+<Accordion title="Expected Output">
+```
+Dumb Badge(s) Remover 1.0.0
+copyright (c) 2023, 2025 exurd
+
+Downloading badge spam lists...
+Success!
+```
+</Accordion>
+
+### Downloaded Structure
+
+```
+badge-spam-lists-main/
+├── README.md
+├── badge_chain_001.txt.zst
+├── badge_chain_002.txt.zst
+├── badge_chain_003.txt.zst
+├── ...
+└── mega_chain_xyz.txt.zst
+```
+
+Each `.txt.zst` file contains compressed lists of Roblox game URLs.
+
+### File Format
+
+Files are compressed with Zstandard (`.zst`). When decompressed, they contain:
+
+```text
+https://www.roblox.com/games/1234567890
+https://www.roblox.com/games/1234567891
+https://www.roblox.com/games/1234567892
+...
+```
+
+<Info>
+  DBR automatically decompresses `.txt.zst` files when using the `--file` command or inventory scanner.
+</Info>
+
+### Using the Lists
+
+#### Method 1: With Inventory Scanner
+
+The scanner automatically uses all downloaded `.txt.zst` files:
+
+```bash
+dbr --check-inventory 123456789
+```
+
+#### Method 2: Direct Removal
+
+Use a specific compressed list file:
+
+```bash
+dbr --env-file .env --file badge-spam-lists-main/badge_chain_001.txt.zst
+```
+
+#### Method 3: Decompress and Edit
+
+Manually decompress, review, and use:
+
+```bash
+# Decompress with zstd
+zstd -d badge-spam-lists-main/badge_chain_001.txt.zst
+
+# Review and edit
+nano badge_chain_001.txt
+
+# Use with DBR
+dbr --env-file .env --file badge_chain_001.txt
+```
+
+### What's Included?
+
+The repository contains curated lists of:
+
+- **Badge Chains** - Series of games pumping out spam badges
+- **AFK Games** - Games requiring no interaction for badges
+- **Badge Farms** - Games designed solely for badge distribution
+- **Exploit Games** - Games with easily exploitable badge requirements
+
+<Note>
+  Lists are community-maintained and may not be 100% accurate. Always review before deletion.
+</Note>
+
+### GitHub Repository
+
+DBR downloads from:
+```
+https://github.com/exurd/badge-spam-lists/archive/refs/heads/main.zip
+```
+
+The repository is regularly updated with new badge chains and spam games.
+
+---
+
+## Combining Lists
+
+Download both lists for comprehensive spam detection:
+
+```bash
+# Download both lists
+dbr --download-mgs-invalid-list
+dbr --download-badge-spam-lists
+
+# Scan inventory with both lists
+dbr --check-inventory 123456789
+```
+
+The inventory scanner combines all available lists for maximum coverage:
+- MetaGamerScore invalid games
+- Badge spam lists (all `.txt.zst` files)
+- Custom `spam_badges.txt` (if present)
+
+---
+
+## Custom Lists
+
+### Creating Your Own List
+
+Create a custom `spam_badges.txt` file with badge IDs:
+
+```text spam_badges.txt
+2124858409
+2124858410
+2124858411
+```
+
+The inventory scanner automatically includes this file if it exists in the current directory.
+
+### File Formats Supported
+
+<ResponseField name=".txt" type="text">
+  Plain text files with Roblox URLs or badge IDs
+</ResponseField>
+
+<ResponseField name=".txt.zst" type="compressed">
+  Zstandard-compressed text files (automatically decompressed by DBR)
+</ResponseField>
+
+<ResponseField name=".json" type="json">
+  JSON files with `invalid_games` array (MGS format)
+</ResponseField>
+
+---
+
+## Update Frequency
+
+<Tabs>
+  <Tab title="MetaGamerScore">
+    **Update Schedule:** Real-time
+    
+    The MGS invalid games list is updated continuously as new spam games are detected.
+    
+    **Recommendation:** Re-download weekly or before major inventory scans
+    
+    ```bash
+    # Update MGS list
+    dbr --download-mgs-invalid-list
+    ```
+  </Tab>
+  
+  <Tab title="Badge Spam Lists">
+    **Update Schedule:** Community-driven (irregular)
+    
+    The GitHub repository is updated when community members discover new badge chains.
+    
+    **Recommendation:** Re-download monthly or when you notice new spam badges
+    
+    ```bash
+    # Update badge spam lists
+    rm -rf badge-spam-lists-main/
+    dbr --download-badge-spam-lists
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Storage Locations
+
+All lists are downloaded to the **current working directory**:
+
+```bash
+$ ls -1
+mgs_invalid_games.json
+mgs_invalid_games.txt
+badge-spam-lists-main/
+spam_badges.txt          # optional custom list
+```
+
+<Info>
+  To use lists from a different location, run DBR from that directory or copy the files to your working directory.
+</Info>
+
+---
+
+## Disk Space Requirements
+
+<ResponseField name="mgs_invalid_games.json" type="size">
+  ~50-500 KB (depends on number of flagged games)
+</ResponseField>
+
+<ResponseField name="mgs_invalid_games.txt" type="size">
+  ~100 KB - 1 MB
+</ResponseField>
+
+<ResponseField name="badge-spam-lists-main/" type="size">
+  ~5-50 MB compressed (varies by number of lists)
+</ResponseField>
+
+<ResponseField name="Total" type="size">
+  ~10-100 MB for all lists
+</ResponseField>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Failed to download list">
+    **Possible Causes:**
+    - No internet connection
+    - GitHub/MGS servers are down
+    - Firewall blocking requests
+    
+    **Solutions:**
+    - Check internet connection
+    - Retry later
+    - Download manually and extract to current directory
+  </Accordion>
+  
+  <Accordion title="Zip file could not be read">
+    **Cause:** Corrupted download from GitHub
+    
+    **Solution:** Delete partial download and retry:
+    ```bash
+    rm -rf badge-spam-lists-main/
+    dbr --download-badge-spam-lists
+    ```
+  </Accordion>
+  
+  <Accordion title="Could not import zstandard python library">
+    **Cause:** Missing `zstandard` package
+    
+    **Solution:** Install the package:
+    ```bash
+    pip install zstandard
+    ```
+    
+    This is required to read `.txt.zst` compressed files.
+  </Accordion>
+  
+  <Accordion title="Scanner can't find downloaded lists">
+    **Cause:** Lists downloaded to wrong directory
+    
+    **Solution:** Run scanner from the same directory where you downloaded lists:
+    ```bash
+    cd /path/to/lists
+    dbr --check-inventory 123456789
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Manual Download
+
+If automatic downloads fail, you can download lists manually:
+
+<Tabs>
+  <Tab title="MetaGamerScore">
+    1. Visit: https://metagamerscore.com/api/roblox/invalid_games
+    2. Save as `mgs_invalid_games.json`
+    3. (Optional) Convert to `.txt` format:
+       ```bash
+       jq -r '.invalid_games[] | "https://www.roblox.com/games/\(.)"' mgs_invalid_games.json > mgs_invalid_games.txt
+       ```
+  </Tab>
+  
+  <Tab title="Badge Spam Lists">
+    1. Visit: https://github.com/exurd/badge-spam-lists
+    2. Click "Code" → "Download ZIP"
+    3. Extract to current directory:
+       ```bash
+       unzip badge-spam-lists-main.zip
+       ```
+  </Tab>
+</Tabs>
+
+---
+
+## Privacy and Security
+
+<Info>
+  **No authentication required!** List downloads are completely anonymous and do not require a Roblox token.
+</Info>
+
+<CardGroup cols={2}>
+  <Card title="Data Sources" icon="server">
+    Lists are fetched from public APIs and repositories
+  </Card>
+  
+  <Card title="No Tracking" icon="eye-slash">
+    DBR does not send any personal information when downloading lists
+  </Card>
+  
+  <Card title="Open Source" icon="code">
+    All list sources are publicly verifiable
+  </Card>
+  
+  <Card title="Local Storage" icon="hard-drive">
+    Lists are stored locally and never uploaded
+  </Card>
+</CardGroup>
+
+---
+
+## Contributing to Lists
+
+Help improve spam detection by contributing to the badge spam lists:
+
+<Steps>
+  <Step title="Find Spam Badges">
+    Identify new badge chains or spam games not yet in the lists
+  </Step>
+  
+  <Step title="Document the Chain">
+    Create a list of all place IDs in the badge chain
+  </Step>
+  
+  <Step title="Submit to GitHub">
+    Open a pull request on [exurd/badge-spam-lists](https://github.com/exurd/badge-spam-lists)
+  </Step>
+</Steps>
+
+<Note>
+  For MetaGamerScore additions, contact the MGS team through their website.
+</Note>

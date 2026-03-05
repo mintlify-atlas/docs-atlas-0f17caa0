@@ -1,0 +1,371 @@
+---
+title: Troubleshooting
+description: Common issues and solutions when using DBR
+---
+
+This page covers common errors and issues you might encounter when using DBR, along with solutions.
+
+## Authentication Issues
+
+### Token Validation Failed
+
+**Error messages:**
+```
+Failed to get CSRF token: [error]
+Cannot proceed without it.
+```
+
+**Cause:** DBR couldn't obtain a valid CSRF token from Roblox, which is required for all badge deletion operations.
+
+**Solutions:**
+
+<Steps>
+  <Step title="Verify your token">
+    Ensure your `.ROBLOSECURITY` token is valid and hasn't expired. Tokens can expire if:
+    - You logged out of Roblox
+    - You changed your password
+    - The session timed out
+  </Step>
+  
+  <Step title="Get a fresh token">
+    Export a new token from your browser. See the [Authentication guide](/configuration/authentication) for instructions.
+  </Step>
+  
+  <Step title="Check token format">
+    Make sure the token includes the full cookie value without any extra spaces or characters.
+  </Step>
+</Steps>
+
+### User ID Not Found
+
+**Error message:**
+```
+The User ID could not be found from the token. Please check if the specified Roblox token is correct.
+```
+
+**Cause:** The provided token is invalid, malformed, or expired.
+
+**Solutions:**
+- Verify you copied the entire `.ROBLOSECURITY` token
+- Get a fresh token from your browser
+- Ensure you're using your own token, not someone else's
+
+### Authorization Denied (401)
+
+**Error message:**
+```
+Authorization has been denied for this request.
+```
+
+**Cause:** The token is no longer valid or doesn't have permission for the requested operation.
+
+**Solutions:**
+- Refresh your token
+- Log into Roblox in your browser to ensure your session is active
+- Wait a few minutes and try again
+
+## Rate Limiting Issues
+
+### Too Many Requests (429)
+
+**Error message:**
+```
+Too many requests!
+Sleeping [X] seconds for [URL]...
+```
+
+**Cause:** Roblox is rate limiting your requests due to too many API calls in a short period.
+
+**What DBR does:**
+- Automatically retries with exponential backoff
+- Waits progressively longer between attempts (2, 4, 8, 16... seconds)
+- Makes up to 8 retry attempts per request
+
+**How to minimize rate limits:**
+
+<CardGroup cols={2}>
+  <Card title="Reduce threads" icon="gauge-low">
+    Use `--delete-threads 1` or `2` instead of higher values
+  </Card>
+  
+  <Card title="Be patient" icon="clock">
+    Let DBR handle retries automatically - don't restart the program
+  </Card>
+  
+  <Card title="Avoid peak hours" icon="calendar">
+    Run DBR during off-peak times when Roblox servers are less busy
+  </Card>
+  
+  <Card title="Split large jobs" icon="split">
+    Process large badge lists in smaller batches over multiple sessions
+  </Card>
+</CardGroup>
+
+## CSRF Token Issues
+
+### Token Validation Failed During Deletion
+
+**Error message:**
+```
+Token Validation Failed. Re-validating...
+```
+
+**Cause:** The CSRF token expired during a long-running operation (status code 403 or 419).
+
+**What DBR does:**
+- Automatically re-validates the CSRF token
+- Retries the failed operation
+- Continues processing without manual intervention
+
+**If re-validation keeps failing:**
+- Check your internet connection
+- Verify your `.ROBLOSECURITY` token is still valid
+- Wait a few minutes for Roblox servers to stabilize
+
+## Connection Issues
+
+### Request Timeout
+
+**Error message:**
+```
+Timed out!
+Request failed: [error]
+```
+
+**Cause:** Network connectivity issues or slow Roblox API responses.
+
+**Solutions:**
+- Check your internet connection
+- Verify Roblox isn't experiencing an outage: [Roblox Status](https://status.roblox.com)
+- DBR will automatically retry - wait for the retry attempts to complete
+
+### Connection Error
+
+**Error message:**
+```
+Request failed: [error]
+```
+
+**Common causes:**
+- No internet connection
+- Firewall blocking requests
+- DNS resolution issues
+- Roblox API temporarily unavailable
+
+**Solutions:**
+- Verify internet connectivity
+- Check firewall/antivirus settings
+- Try using a different network
+- Wait and retry if Roblox services are down
+
+### Too Many Redirects
+
+**Error message:**
+```
+Too many redirects!
+Request failed: [error]
+```
+
+**Cause:** Unusual redirect loop from Roblox servers.
+
+**Solutions:**
+- This is rare and usually temporary
+- Wait a few minutes and try again
+- Check [Roblox Status](https://status.roblox.com) for service disruptions
+
+## Badge Deletion Issues
+
+### Badge Not Found (404)
+
+**Error message:**
+```
+Badge [ID] is invalid or does not exist.
+```
+
+**Cause:** The badge ID doesn't exist or has been deleted by Roblox.
+
+**What happens:** DBR skips this badge and continues processing others.
+
+### Badge Removal Failed (403)
+
+**Error message:**
+```
+Badge removal failed.
+Response: 403, [response text]
+```
+
+**Possible causes:**
+- You don't own this badge
+- The badge cannot be deleted (some special badges are protected)
+- CSRF token needs re-validation
+
+**What DBR does:**
+- Attempts to re-validate CSRF token
+- Retries up to 3 times
+- Moves on if the badge can't be deleted
+
+## File Issues
+
+### File Not Found
+
+**Error message:**
+```
+[Errno 2] No such file or directory: '[filename]'
+```
+
+**Solutions:**
+- Check the file path is correct
+- Use absolute paths or ensure you're in the correct directory
+- Verify the file exists: `ls [filename]`
+
+### Empty or Unreadable File
+
+**Error message:**
+```
+text file is empty or unreadable
+```
+
+**Solutions:**
+- Verify the file contains valid Roblox URLs
+- Check file encoding is UTF-8
+- Ensure file permissions allow reading
+- For `.txt.zst` files, verify they're not corrupted
+
+### Invalid URL Format
+
+**Symptom:** URLs in your file are being skipped silently.
+
+**Cause:** URLs don't match the expected pattern.
+
+**Expected format:**
+```
+https://www.roblox.com/games/123456789
+https://www.roblox.com/badges/987654321
+https://www.roblox.com/users/12345
+```
+
+**Note:** URLs without `www.` are also supported.
+
+## Performance Issues
+
+### Slow Badge Deletion
+
+**Symptoms:**
+- Each badge takes several seconds to delete
+- Progress seems slower than expected
+
+**Normal behavior:**
+- DBR includes built-in delays (0.75-5 seconds) to avoid rate limiting
+- Retries with exponential backoff add additional time
+- BoR Database API requests can take much longer
+
+**To speed up (use with caution):**
+- Increase `--delete-threads` (e.g., `--delete-threads 3`)
+- **Warning:** Higher thread counts increase rate limit risk
+
+### Using BoR Database is Very Slow
+
+**Symptom:**
+```
+Using BoR Database API; requests may take a long time to be processed...
+```
+
+**Cause:** The Badgers of Robloxia API can be slow to respond.
+
+**Solutions:**
+- Avoid using `--use-bor-badge-database` unless necessary
+- Use `--check-inventory` instead to find hidden badges
+- Be patient - this is expected behavior for the BoR API
+
+## Cache Issues
+
+### Places Being Skipped
+
+**Message:**
+```
+Already checked place, skipping...
+```
+
+**Cause:** DBR caches processed places in `checked_places.json` to avoid redundant processing.
+
+**To process again:**
+```bash
+# Clear the cache
+rm -rf dbr_cache/checked_places.json
+
+# Or specify a different cache directory
+dbr --cache-directory /tmp/dbr_temp --place 123456
+```
+
+## Installation Issues
+
+### Command Not Found
+
+**Error message:**
+```
+dbr: command not found
+```
+
+**Solutions:**
+
+<Tabs>
+  <Tab title="Using pip">
+    ```bash
+    # Use Python module syntax instead
+    python -m dbr --help
+    
+    # Or add pip install location to PATH
+    export PATH="$PATH:$HOME/.local/bin"
+    ```
+  </Tab>
+  
+  <Tab title="Using pipx">
+    ```bash
+    # Ensure pipx bin directory is in PATH
+    pipx ensurepath
+    
+    # Restart your shell
+    exec $SHELL
+    ```
+  </Tab>
+  
+  <Tab title="Using uv">
+    ```bash
+    # Use uvx to run directly
+    uvx dbr --help
+    ```
+  </Tab>
+</Tabs>
+
+### Module Not Found
+
+**Error message:**
+```
+ModuleNotFoundError: No module named 'dbr'
+```
+
+**Solutions:**
+```bash
+# Verify installation
+pip list | grep dbr
+
+# Reinstall if needed
+pip install --force-reinstall git+https://github.com/exurd/dbr
+```
+
+## Getting More Help
+
+<Card title="Still having issues?" icon="question">
+  If your problem isn't covered here:
+  
+  1. Check the [FAQ](/reference/faq) for additional information
+  2. Review error messages carefully - DBR provides detailed logging
+  3. Try running with a single badge first to isolate the issue
+  4. Report bugs on [GitHub Issues](https://github.com/exurd/dbr/issues)
+</Card>
+
+<Warning>
+  **Never share your `.ROBLOSECURITY` token when asking for help!**
+  
+  If someone asks for your token, they are trying to steal your account.
+</Warning>
