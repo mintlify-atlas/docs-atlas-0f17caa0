@@ -1,0 +1,81 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Dumb Badge(s) Remover",
+  "projectDescription": "A Python CLI tool that batch removes unwanted Roblox badges and scans inventories for spam badges",
+  "theme": "aspen",
+  "primaryColor": "#8b9baa",
+  "lightColor": "#242424",
+  "darkColor": "#bac4cd",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "pages": [
+          "configuration/authentication",
+          "configuration/environment-files",
+          "configuration/options"
+        ]
+      },
+      {
+        "group": "Commands",
+        "pages": [
+          "commands/overview",
+          "commands/remove-badges",
+          "commands/scan-inventory",
+          "commands/download-lists"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/removing-by-place",
+          "guides/removing-by-user",
+          "guides/removing-by-group",
+          "guides/using-text-files",
+          "guides/metagamerscore-integration"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/cli-arguments",
+          "reference/troubleshooting",
+          "reference/faq"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Batch removal of Roblox badges with multi-threaded deletion",
+    "Spam badge detection and inventory scanning",
+    "MetaGamerScore integration for invalid game lists",
+    "Multiple removal methods: by badge ID, place ID, user ID, group ID, or text file",
+    "Badgers of Robloxia database support for disabled badges",
+    "Safe token management via environment files"
+  ],
+  "publicApiSurface": [
+    "dbr --badge BADGE_ID",
+    "dbr --place PLACE_ID",
+    "dbr --user USER_ID",
+    "dbr --group GROUP_ID",
+    "dbr --file FILE",
+    "dbr --check-inventory USER_ID",
+    "dbr --download-mgs-invalid-list",
+    "dbr --download-badge-spam-lists",
+    "dbr --mgs-id MGS_ID",
+    "dbr --use-bor-badge-database",
+    "dbr --env-file ENV_FILE",
+    "dbr --rbx-token RBX_TOKEN",
+    "dbr --delete-threads NUM_THREADS",
+    "dbr --cache-directory CACHE_DIRECTORY",
+    "dbr --user-agent USER_AGENT"
+  ]
+}
